@@ -3,7 +3,6 @@ import { Equipment, AuditLog } from '../types';
 
 /**
  * Robustly get the Webhook URL. 
- * Checks localStorage first (user override), then Vite environment variables.
  */
 const getWebhookUrl = (): string => {
   const override = localStorage.getItem('equiptrack_webhook_override');
@@ -32,28 +31,26 @@ export const storageService = {
 
   /**
    * Sending data to Google Apps Script.
-   * CRITICAL: We do NOT set 'Content-Type'. This makes it a 'Simple Request'.
-   * Google Apps Script can read the body via e.postData.contents.
-   * We use mode: 'no-cors' because we don't need to read the 'Success' string,
-   * just ensure the data is sent.
+   * CRITICAL: Using 'text/plain' makes this a "Simple Request", 
+   * which bypasses the CORS preflight OPTIONS check that GAS doesn't support.
    */
   async callWebhook(action: string, payload: any = {}) {
     const url = getWebhookUrl();
     if (!url) return false;
 
     try {
+      // no-cors mode allows us to send data even if the response headers are missing
       await fetch(url, {
         method: 'POST',
         mode: 'no-cors', 
-        // FIX: Corrected 'header' to 'headers' as expected by fetch's RequestInit
         headers: {
-          // Empty headers to maintain "Simple Request" status
+          'Content-Type': 'text/plain;charset=utf-8',
         },
         body: JSON.stringify({ action, ...payload })
       });
       return true;
     } catch (error) {
-      console.error("Webhook POST Error:", error);
+      console.error("Webhook POST Error (Check if GAS is set to 'Anyone'):", error);
       return false;
     }
   },
@@ -63,22 +60,23 @@ export const storageService = {
     if (!url) return JSON.parse(localStorage.getItem('equiptrack_data') || '[]');
     
     try {
-      // GET requests require 'cors' and 'redirect: follow' for GAS
       const res = await fetch(`${url}?type=inventory`, {
         method: 'GET',
         mode: 'cors',
         redirect: 'follow'
       });
       
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        if (res.status === 403) console.error("Access Forbidden (403): Please re-deploy GAS with 'Who has access: Anyone'");
+        throw new Error(`HTTP ${res.status}`);
+      }
       
       const data = await res.json();
-      // Filter out any rows that don't have an ID (header rows or empty rows)
       const cleaned = data.filter((item: any) => item.id && item.id !== 'id');
       localStorage.setItem('equiptrack_data', JSON.stringify(cleaned));
       return cleaned;
     } catch (e) {
-      console.error("Fetch Items Error:", e);
+      console.error("Fetch Items Error (likely CORS/Permissions):", e);
       return JSON.parse(localStorage.getItem('equiptrack_data') || '[]');
     }
   },

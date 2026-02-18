@@ -11,11 +11,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (url && !url.includes('script.google.com')) {
+    const cleanUrl = url.trim();
+    if (cleanUrl && !cleanUrl.includes('script.google.com')) {
       alert("Invalid URL. Must be a Google Apps Script Web App URL.");
       return;
     }
-    storageService.setWebhookUrl(url);
+    storageService.setWebhookUrl(cleanUrl);
     onClose();
   };
 
@@ -25,7 +26,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
         <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Cloud Config</h2>
-            <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mt-1">Storage Synchronization</p>
+            <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mt-1">Google Sheet Connectivity</p>
           </div>
           <button onClick={onClose} className="w-12 h-12 flex items-center justify-center bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-slate-900 transition-all shadow-sm">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -36,17 +37,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
           <div className="bg-blue-50/50 border border-blue-100 p-6 rounded-3xl">
             <h4 className="text-[10px] font-black text-blue-700 uppercase tracking-widest mb-3 flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              Crucial Step
+              Troubleshooting CORS Errors
             </h4>
-            <p className="text-xs text-blue-800 leading-relaxed font-medium">
-              1. Deploy your Google Script as a <b>Web App</b>.<br/>
-              2. Set Access to <b>"Anyone"</b>.<br/>
-              3. Paste the URL below.
-            </p>
+            <ul className="text-xs text-blue-800 leading-relaxed font-medium list-disc ml-4 space-y-1">
+              <li>Click <b>Deploy > New Deployment</b> in Apps Script.</li>
+              <li>Set <b>Execute as</b> to "Me".</li>
+              <li>Set <b>Who has access</b> to <b>"Anyone"</b>.</li>
+              <li>If 403 error persists, authorize the script to access your Sheet.</li>
+            </ul>
           </div>
 
           <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Web App URL (Ends in /exec)</label>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Web App URL</label>
             <textarea
               required
               value={url}
@@ -62,13 +64,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               onClick={() => { setUrl(''); storageService.setWebhookUrl(''); }}
               className="px-6 py-4 bg-slate-100 text-slate-400 font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all"
             >
-              Clear
+              Reset
             </button>
             <button 
               type="submit" 
               className="flex-1 py-4 bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:bg-blue-600 transition-all shadow-xl shadow-slate-200"
             >
-              Link Google Sheet
+              Save & Reconnect
             </button>
           </div>
         </form>
