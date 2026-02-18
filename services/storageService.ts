@@ -3,7 +3,6 @@ import { Equipment, AuditLog } from '../types';
 
 /**
  * Robustly get the Webhook URL from Vite environment variables.
- * In Vite, variables must be prefixed with VITE_ to be exposed to the client.
  */
 const getWebhookUrl = (): string => {
   // @ts-ignore
@@ -17,24 +16,27 @@ const getWebhookUrl = (): string => {
 const SHEET_WEBHOOK_URL = getWebhookUrl();
 
 export const storageService = {
-  // Helper to handle API calls
+  /**
+   * Sending data to Google Apps Script.
+   * Using 'no-cors' and a 'Simple Request' approach to avoid Preflight/CORS blocks.
+   */
   async callWebhook(action: string, payload: any = {}) {
     if (!SHEET_WEBHOOK_URL) {
-      console.warn("Google Sheet Webhook URL not configured. Go to Vercel Settings > Environment Variables and add VITE_SHEET_WEBHOOK_URL.");
+      console.warn("Google Sheet Webhook URL not configured.");
       return this.fallback(action, payload);
     }
 
     try {
-      // POST requests to Google Apps Script
+      // Note: We don't set Content-Type to application/json to keep it a "simple request"
+      // Google Apps Script will still be able to parse the body if we use JSON.parse(e.postData.contents)
       await fetch(SHEET_WEBHOOK_URL, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
+        mode: 'no-cors', // Critical for Apps Script
         body: JSON.stringify({ action, ...payload })
       });
       return true;
     } catch (error) {
-      console.error("Webhook Error:", error);
+      console.error("Webhook POST Error:", error);
       return false;
     }
   },
@@ -43,9 +45,15 @@ export const storageService = {
     if (!SHEET_WEBHOOK_URL) return JSON.parse(localStorage.getItem('equiptrack_data') || '[]');
     
     try {
-      const res = await fetch(`${SHEET_WEBHOOK_URL}?type=inventory`);
+      // GET requests usually work with CORS if the Web App is public
+      const res = await fetch(`${SHEET_WEBHOOK_URL}?type=inventory`, {
+        method: 'GET',
+        redirect: 'follow'
+      });
+      
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      
       const data = await res.json();
-      // Clean undefined values from the fetch
       const cleaned = data.filter((item: any) => item.id);
       localStorage.setItem('equiptrack_data', JSON.stringify(cleaned));
       return cleaned;
@@ -59,7 +67,13 @@ export const storageService = {
     if (!SHEET_WEBHOOK_URL) return JSON.parse(localStorage.getItem('equiptrack_logs') || '[]');
     
     try {
-      const res = await fetch(`${SHEET_WEBHOOK_URL}?type=logs`);
+      const res = await fetch(`${SHEET_WEBHOOK_URL}?type=logs`, {
+        method: 'GET',
+        redirect: 'follow'
+      });
+      
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      
       const data = await res.json();
       const cleaned = data.filter((log: any) => log.id);
       localStorage.setItem('equiptrack_logs', JSON.stringify(cleaned));
