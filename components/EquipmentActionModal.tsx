@@ -55,7 +55,7 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
             </button>
           </div>
           <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-slate-900 to-transparent">
-             <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-1">{item.category}</p>
+             <p className="text-[10px] font-black text-orange-400 uppercase tracking-[0.3em] mb-1">{item.category}</p>
              <h2 className="text-2xl font-black text-white tracking-tighter uppercase">{item.name}</h2>
           </div>
         </div>
@@ -64,16 +64,16 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
           <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
             <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Operation Status</div>
             <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${
-              isDeploying ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-green-50 text-green-600 border-green-100'
+              isDeploying ? 'bg-green-50 text-green-600 border-green-100' : 'bg-orange-50 text-orange-600 border-orange-100'
             }`}>
-              {isDeploying ? 'READY TO DEPLOY' : 'OUT ON SITE'}
+              {isDeploying ? 'พร้อมใช้งาน' : 'กำลังใช้งานอยู่'}
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-                {isDeploying ? 'ASSIGN TO OPERATOR' : 'RETURNED BY'}
+                {isDeploying ? 'ชื่อผู้เบิกใช้งาน' : 'ผู้ส่งคืนครุภัณฑ์'}
               </label>
               <input
                 type="text"
@@ -82,14 +82,14 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all font-bold text-slate-900 disabled:opacity-50"
-                placeholder="Staff name..."
+                placeholder="ระบุชื่อเจ้าหน้าที่..."
               />
             </div>
 
             {isDeploying && (
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-                  WORK LOCATION / PROJECT
+                  สถานที่ใช้งาน / ชื่อโปรเจกต์
                 </label>
                 <input
                   type="text"
@@ -98,21 +98,21 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                   className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all font-bold text-slate-900 disabled:opacity-50"
-                  placeholder="Site ID or Project Name"
+                  placeholder="เช่น Site ID หรือ ชื่อโครงการ"
                 />
               </div>
             )}
 
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-                REMARKS / NOTES
+                หมายเหตุ / สภาพอุปกรณ์
               </label>
               <textarea
                 disabled={isTransmitting}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all h-20 resize-none font-medium text-slate-600 text-sm disabled:opacity-50"
-                placeholder="Physical condition or notes..."
+                placeholder="ระบุสภาพเครื่อง หรือ รายละเอียดเพิ่มเติม..."
               />
             </div>
           </div>
@@ -130,7 +130,7 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
                 SYNCING LOGISTICS...
               </>
             ) : (
-              isDeploying ? 'พร้อมใช้งาน' : 'รอนำส่งคืน'
+              isDeploying ? 'ยืนยันเบิกใช้งาน' : 'ยืนยันส่งคืน'
             )}
           </button>
         </form>

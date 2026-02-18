@@ -59,6 +59,14 @@ const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => 
     [EquipmentStatus.MAINTENANCE]: 'bg-slate-100 text-slate-700', 
     [EquipmentStatus.LOST]: 'bg-red-100 text-red-700' 
   };
+
+  const statusLabel = {
+    [EquipmentStatus.AVAILABLE]: 'พร้อมใช้งาน',
+    [EquipmentStatus.IN_USE]: 'กำลังใช้งานอยู่',
+    [EquipmentStatus.MAINTENANCE]: 'กำลังซ่อมแซม',
+    [EquipmentStatus.LOST]: 'สูญหาย'
+  };
+
   return (
     <div className="bg-white p-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col gap-5 active:bg-slate-50 transition-all hover:shadow-xl hover:-translate-y-1" onClick={() => onSelect(item)}>
       <div className="flex items-center gap-4">
@@ -68,7 +76,7 @@ const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => 
         <div className="flex-1 overflow-hidden">
           <div className="flex items-center justify-between gap-2">
             <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${statusColors[item.status]}`}>
-              {item.status === EquipmentStatus.IN_USE ? 'OUT ON SITE' : item.status.replace('_', ' ')}
+              {statusLabel[item.status]}
             </span>
             <div className="flex gap-1">
               <button onClick={(e) => { e.stopPropagation(); onViewQR(item); }} className="p-2 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-xl transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg></button>
@@ -86,7 +94,7 @@ const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => 
       </div>
       <div className="flex items-center justify-between text-[10px] pt-4 border-t border-slate-50 font-black tracking-widest uppercase">
         <div className="text-slate-400">{item.category}</div>
-        <div className="text-right">{item.currentHolder ? <div className="text-orange-600 truncate max-w-[100px]">{item.currentHolder}</div> : <div className="text-slate-200">STORAGE BASE</div>}</div>
+        <div className="text-right">{item.currentHolder ? <div className="text-orange-600 truncate max-w-[100px]">{item.currentHolder}</div> : <div className="text-slate-200">BASE STORAGE</div>}</div>
       </div>
       {item.projectName && <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest self-start shadow-lg shadow-slate-100">@{item.projectName}</div>}
     </div>
@@ -131,8 +139,8 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
             <span className="px-3 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg">{role} terminal</span>
             {isSyncing && (
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-[10px] font-black text-blue-600 tracking-widest uppercase">Cloud Processing...</span>
+                <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-[10px] font-black text-orange-600 tracking-widest uppercase">Cloud Processing...</span>
               </div>
             )}
           </div>
@@ -141,15 +149,15 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
         <div className="flex gap-3 w-full md:w-auto">
           <button onClick={onRefresh} className={`p-4 bg-white border-2 border-slate-100 text-slate-400 hover:text-blue-600 rounded-2xl transition-all shadow-sm ${isSyncing ? 'animate-spin' : ''}`}><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
           {isAdmin && <button onClick={onAddEquipment} className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-100 font-black py-4 px-8 rounded-2xl transition-all active:scale-95 text-[10px] uppercase tracking-widest shadow-sm"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>Register</button>}
-          <Link to="/scan" className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-orange-600 hover:orange-blue-700 text-white font-black py-4 px-8 rounded-2xl shadow-xl shadow-orange-200 transition-all active:scale-95 text-[10px] uppercase tracking-widest"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg>Fast Scan</Link>
+          <Link to="/scan" className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-black py-4 px-8 rounded-2xl shadow-xl shadow-orange-200 transition-all active:scale-95 text-[10px] uppercase tracking-widest"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg>Fast Scan</Link>
         </div>
       </header>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Total Units" value={stats.total} color="bg-slate-100 text-slate-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>} />
-        <StatCard label="In Storage" value={stats.available} color="bg-green-50 text-green-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
-        <StatCard label="Out on Site" value={stats.inUse} color="bg-orange-50 text-orange-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>} />
-        <StatCard label="Maintenance" value={stats.maintenance} color="bg-slate-50 text-slate-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>} />
+        <StatCard label="พร้อมใช้งาน" value={stats.available} color="bg-green-50 text-green-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
+        <StatCard label="กำลังใช้งานอยู่" value={stats.inUse} color="bg-orange-50 text-orange-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>} />
+        <StatCard label="กำลังซ่อมแซม" value={stats.maintenance} color="bg-slate-50 text-slate-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>} />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 pb-24 md:pb-12">
@@ -187,7 +195,7 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
                 <div className="flex-1 overflow-hidden">
                   <p className="text-[13px] leading-tight mb-1">
                     <span className="font-black text-slate-900 uppercase">{log.userName}</span>
-                    <span className="text-slate-400 font-bold"> {log.action === 'CHECK_OUT' ? 'deployed' : 'returned'} </span>
+                    <span className="text-slate-400 font-bold"> {log.action === 'CHECK_OUT' ? 'เบิกไปใช้งาน' : 'นำส่งคืน'} </span>
                     <span className="font-black text-slate-900 truncate">{log.equipmentName}</span>
                   </p>
                   <p className="text-[9px] text-slate-300 uppercase font-black tracking-widest">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {log.projectName ? `@${log.projectName}` : 'BASE'}</p>
