@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-  <title>EquipTrack Pro - Industrial Management</title>
+  <title>EquipTrack</title>
   <link rel="icon" type="image/png" href="https://img2.pic.in.th/7289a7bc-643b-4c94-96a8-9a8826277950.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Thai Kanit Font -->
@@ -15,8 +15,9 @@
     }
     body {
       font-family: var(--primary-font);
-      background-color: #fbfcfd;
-      overflow-x: hidden; /* Prevent horizontal freeze/scroll on mobile */
+      background-color: #020617; /* Deepest Slate */
+      color: #f8fafc;
+      overflow-x: hidden;
       width: 100%;
       -webkit-text-size-adjust: 100%;
     }
@@ -27,23 +28,19 @@
       background: transparent;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #e2e8f0;
+      background: #1e293b;
       border-radius: 10px;
     }
-    /* Smooth transitions for zoom stability */
     * {
       box-sizing: border-box;
       max-width: 100vw;
     }
-    @media print {
-      nav, .md\:hidden, button, header {
-        display: none !important;
-      }
-      .fixed {
-        position: relative !important;
-        inset: 0 !important;
-        background: white !important;
-      }
+    /* Glassmorphism utility */
+    .glass {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
   </style>
 <script type="importmap">
