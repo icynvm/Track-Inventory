@@ -40,7 +40,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
               Troubleshooting CORS Errors
             </h4>
             <ul className="text-xs text-blue-800 leading-relaxed font-medium list-disc ml-4 space-y-1">
-              <li>Click <b>Deploy > New Deployment</b> in Apps Script.</li>
+              <li>Click <b>Deploy &gt; New Deployment</b> in Apps Script.</li>
               <li>Set <b>Execute as</b> to "Me".</li>
               <li>Set <b>Who has access</b> to <b>"Anyone"</b>.</li>
               <li>If 403 error persists, authorize the script to access your Sheet.</li>
