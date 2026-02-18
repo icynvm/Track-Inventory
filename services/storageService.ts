@@ -2,9 +2,13 @@
 import { Equipment, AuditLog } from '../types';
 
 /**
- * Robustly get the Webhook URL from Vite environment variables.
+ * Robustly get the Webhook URL. 
+ * Checks localStorage first (user override), then Vite environment variables.
  */
 const getWebhookUrl = (): string => {
+  const override = localStorage.getItem('equiptrack_webhook_override');
+  if (override) return override;
+
   // @ts-ignore
   const env = import.meta.env;
   if (env && env.VITE_SHEET_WEBHOOK_URL) {
@@ -13,25 +17,30 @@ const getWebhookUrl = (): string => {
   return '';
 };
 
-const SHEET_WEBHOOK_URL = getWebhookUrl();
-
 export const storageService = {
-  /**
-   * Sending data to Google Apps Script.
-   * Using 'no-cors' and a 'Simple Request' approach to avoid Preflight/CORS blocks.
-   */
+  getWebhookUrl,
+  
+  setWebhookUrl(url: string) {
+    if (!url) {
+      localStorage.removeItem('equiptrack_webhook_override');
+    } else {
+      localStorage.setItem('equiptrack_webhook_override', url);
+    }
+    // Reload to apply changes across service
+    window.location.reload();
+  },
+
   async callWebhook(action: string, payload: any = {}) {
-    if (!SHEET_WEBHOOK_URL) {
+    const url = getWebhookUrl();
+    if (!url) {
       console.warn("Google Sheet Webhook URL not configured.");
       return this.fallback(action, payload);
     }
 
     try {
-      // Note: We don't set Content-Type to application/json to keep it a "simple request"
-      // Google Apps Script will still be able to parse the body if we use JSON.parse(e.postData.contents)
-      await fetch(SHEET_WEBHOOK_URL, {
+      await fetch(url, {
         method: 'POST',
-        mode: 'no-cors', // Critical for Apps Script
+        mode: 'no-cors',
         body: JSON.stringify({ action, ...payload })
       });
       return true;
@@ -42,17 +51,15 @@ export const storageService = {
   },
 
   async getItems(): Promise<Equipment[]> {
-    if (!SHEET_WEBHOOK_URL) return JSON.parse(localStorage.getItem('equiptrack_data') || '[]');
+    const url = getWebhookUrl();
+    if (!url) return JSON.parse(localStorage.getItem('equiptrack_data') || '[]');
     
     try {
-      // GET requests usually work with CORS if the Web App is public
-      const res = await fetch(`${SHEET_WEBHOOK_URL}?type=inventory`, {
+      const res = await fetch(`${url}?type=inventory`, {
         method: 'GET',
         redirect: 'follow'
       });
-      
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      
       const data = await res.json();
       const cleaned = data.filter((item: any) => item.id);
       localStorage.setItem('equiptrack_data', JSON.stringify(cleaned));
@@ -64,16 +71,15 @@ export const storageService = {
   },
 
   async getLogs(): Promise<AuditLog[]> {
-    if (!SHEET_WEBHOOK_URL) return JSON.parse(localStorage.getItem('equiptrack_logs') || '[]');
+    const url = getWebhookUrl();
+    if (!url) return JSON.parse(localStorage.getItem('equiptrack_logs') || '[]');
     
     try {
-      const res = await fetch(`${SHEET_WEBHOOK_URL}?type=logs`, {
+      const res = await fetch(`${url}?type=logs`, {
         method: 'GET',
         redirect: 'follow'
       });
-      
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      
       const data = await res.json();
       const cleaned = data.filter((log: any) => log.id);
       localStorage.setItem('equiptrack_logs', JSON.stringify(cleaned));
@@ -93,6 +99,13 @@ export const storageService = {
   async addItem(item: Equipment): Promise<void> {
     await this.callWebhook('add_item', { item });
     this.fallback('add_item', { item });
+  },
+
+  async deleteItem(id: string): Promise<void> {
+    await this.callWebhook('delete_item', { id });
+    const items = JSON.parse(localStorage.getItem('equiptrack_data') || '[]');
+    const filtered = items.filter((i: any) => i.id !== id);
+    localStorage.setItem('equiptrack_data', JSON.stringify(filtered));
   },
 
   async addLog(log: Omit<AuditLog, 'id' | 'timestamp'>): Promise<void> {

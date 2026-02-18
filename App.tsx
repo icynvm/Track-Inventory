@@ -7,6 +7,8 @@ import { storageService } from './services/storageService';
 import Scanner from './components/Scanner';
 import EquipmentActionModal from './components/EquipmentActionModal';
 import EquipmentFormModal from './components/EquipmentFormModal';
+import SettingsModal from './components/SettingsModal';
+import CustomAlert, { AlertType } from './components/CustomAlert';
 
 type UserRole = 'admin' | 'user';
 
@@ -50,7 +52,7 @@ const StatCard: React.FC<{ label: string; value: number; color: string; icon: Re
   </div>
 );
 
-const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => void; onViewQR: (item: Equipment) => void; onEdit: (item: Equipment) => void; isAdmin: boolean; }> = ({ item, onSelect, onViewQR, onEdit, isAdmin }) => {
+const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => void; onViewQR: (item: Equipment) => void; onEdit: (item: Equipment) => void; onDelete: (item: Equipment) => void; isAdmin: boolean; }> = ({ item, onSelect, onViewQR, onEdit, onDelete, isAdmin }) => {
   const statusColors = { [EquipmentStatus.AVAILABLE]: 'bg-green-100 text-green-700', [EquipmentStatus.IN_USE]: 'bg-blue-100 text-blue-700', [EquipmentStatus.MAINTENANCE]: 'bg-orange-100 text-orange-700', [EquipmentStatus.LOST]: 'bg-red-100 text-red-700' };
   return (
     <div className="bg-white p-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col gap-5 active:bg-slate-50 transition-all hover:shadow-xl hover:-translate-y-1" onClick={() => onSelect(item)}>
@@ -62,8 +64,13 @@ const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => 
           <div className="flex items-center justify-between gap-2">
             <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${statusColors[item.status]}`}>{item.status.replace('_', ' ')}</span>
             <div className="flex gap-1">
-              <button onClick={(e) => { e.stopPropagation(); onViewQR(item); }} className="p-2 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-xl"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg></button>
-              {isAdmin && <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-slate-400 hover:text-orange-600 bg-slate-50 rounded-xl"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>}
+              <button onClick={(e) => { e.stopPropagation(); onViewQR(item); }} className="p-2 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-xl transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg></button>
+              {isAdmin && (
+                <>
+                  <button onClick={(e) => { e.stopPropagation(); onEdit(item); }} className="p-2 text-slate-400 hover:text-orange-600 bg-slate-50 rounded-xl transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                  <button onClick={(e) => { e.stopPropagation(); onDelete(item); }} className="p-2 text-slate-400 hover:text-red-600 bg-slate-50 rounded-xl transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                </>
+              )}
             </div>
           </div>
           <h3 className="font-black text-slate-900 tracking-tight truncate mt-1">{item.name}</h3>
@@ -89,6 +96,21 @@ const AppContent: React.FC = () => {
   const [editingItem, setEditingItem] = useState<Equipment | null>(null);
   const [viewingQRItem, setViewingQRItem] = useState<Equipment | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Custom Alert State
+  const [alertConfig, setAlertConfig] = useState<{
+    isOpen: boolean;
+    type: AlertType;
+    title: string;
+    message: string;
+    onConfirm?: () => void;
+  }>({ isOpen: false, type: 'info', title: '', message: '' });
+
+  const showAlert = (type: AlertType, title: string, message: string, onConfirm?: () => void) => {
+    setAlertConfig({ isOpen: true, type, title, message, onConfirm });
+  };
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -112,6 +134,7 @@ const AppContent: React.FC = () => {
   const handleLogin = (selectedRole: UserRole) => {
     setRole(selectedRole);
     localStorage.setItem('equiptrack_role', selectedRole);
+    showAlert('success', 'Authentication Success', `Logged in as ${selectedRole.toUpperCase()}`);
   };
 
   const handleLogout = () => {
@@ -125,35 +148,58 @@ const AppContent: React.FC = () => {
       setSelectedItem(item);
       navigate('/');
     } else {
-      alert(`Asset ID ${id} not found.`);
+      showAlert('error', 'Asset Not Found', `ID ${id} is not registered in the matrix.`);
     }
   };
 
   const handleSaveEquipment = async (newItem: Equipment) => {
-    if (editingItem) {
-      await storageService.updateItem(newItem);
-    } else {
-      await storageService.addItem(newItem);
+    try {
+      if (editingItem) {
+        await storageService.updateItem(newItem);
+        showAlert('success', 'Update Complete', 'Asset specifications updated successfully.');
+      } else {
+        await storageService.addItem(newItem);
+        showAlert('success', 'Registration Success', 'New asset added to the active inventory.');
+      }
+      await loadData();
+      setIsAddingEquipment(false);
+      setEditingItem(null);
+      if (!editingItem) setViewingQRItem(newItem);
+    } catch (e) {
+      showAlert('error', 'Sync Failure', 'Failed to update remote storage.');
     }
-    await loadData(); // Refresh from Sheet
-    setIsAddingEquipment(false);
-    setEditingItem(null);
-    if (!editingItem) setViewingQRItem(newItem);
+  };
+
+  const handleDeleteItem = (item: Equipment) => {
+    showAlert('confirm', 'Confirm Destruction', `Are you sure you want to permanently remove ${item.name} from the database?`, async () => {
+      try {
+        await storageService.deleteItem(item.id);
+        showAlert('success', 'Asset Deleted', 'The item has been removed from all records.');
+        await loadData();
+      } catch (e) {
+        showAlert('error', 'Operation Failed', 'Could not delete item from Google Sheets.');
+      }
+    });
   };
 
   const handleAction = async (updatedItem: Equipment, userName: string, projectName?: string, notes?: string) => {
-    const isCheckOut = updatedItem.status === EquipmentStatus.IN_USE;
-    await storageService.updateItem(updatedItem);
-    await storageService.addLog({
-      equipmentId: updatedItem.id,
-      equipmentName: updatedItem.name,
-      action: isCheckOut ? 'CHECK_OUT' : 'CHECK_IN',
-      userName,
-      projectName,
-      notes
-    });
-    await loadData();
-    setSelectedItem(null);
+    try {
+      const isCheckOut = updatedItem.status === EquipmentStatus.IN_USE;
+      await storageService.updateItem(updatedItem);
+      await storageService.addLog({
+        equipmentId: updatedItem.id,
+        equipmentName: updatedItem.name,
+        action: isCheckOut ? 'CHECK_OUT' : 'CHECK_IN',
+        userName,
+        projectName,
+        notes
+      });
+      showAlert('success', 'Transmission Received', isCheckOut ? `Checked out to ${userName}` : 'Asset returned to storage.');
+      await loadData();
+      setSelectedItem(null);
+    } catch (e) {
+      showAlert('error', 'Sync Error', 'Cloud update failed. Local cache will sync later.');
+    }
   };
 
   if (!role) return <LoginPage onLogin={handleLogin} />;
@@ -166,11 +212,14 @@ const AppContent: React.FC = () => {
             <div className="bg-slate-900 p-3 rounded-[1.25rem] shadow-2xl shadow-slate-200 transition-transform group-hover:rotate-6"><svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" /></svg></div>
             <div className="leading-none"><span className="text-2xl font-black text-slate-900 tracking-tighter uppercase">EquipTrack</span><div className="text-[10px] font-black text-blue-600 tracking-[0.4em] uppercase mt-1">Matrix Cloud</div></div>
           </Link>
-          <div className="flex items-center gap-4 md:gap-10">
+          <div className="flex items-center gap-4 md:gap-8">
             {isLoading && <div className="animate-spin text-blue-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></div>}
-            <div className="hidden md:flex items-center gap-10">
+            <div className="hidden md:flex items-center gap-8">
               <Link to="/" className={`text-xs font-black tracking-widest transition-colors ${location.pathname === '/' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-900'}`}>DASHBOARD</Link>
               <Link to="/scan" className={`text-xs font-black tracking-widest transition-colors ${location.pathname === '/scan' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-900'}`}>LENS SCAN</Link>
+              <button onClick={() => setShowSettings(true)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              </button>
               <button onClick={handleLogout} className="text-[10px] font-black text-slate-900 tracking-widest uppercase bg-slate-50 px-4 py-2 rounded-full border border-slate-100 hover:bg-red-50 transition-all">Logout</button>
             </div>
           </div>
@@ -178,14 +227,14 @@ const AppContent: React.FC = () => {
       </nav>
 
       <main className="max-w-7xl mx-auto px-6">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-40 animate-pulse">
-            <div className="w-20 h-2 bg-slate-200 rounded-full mb-4"></div>
-            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Fetching Sheet Data...</p>
+        {isLoading && items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-40 animate-pulse text-center">
+            <div className="mx-auto w-20 h-2 bg-slate-200 rounded-full mb-4"></div>
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Fetching Matrix Data...</p>
           </div>
         ) : (
           <Routes>
-            <Route path="/" element={<DashboardPage items={items} logs={logs} onSelectItem={setSelectedItem} onAddEquipment={() => setIsAddingEquipment(true)} onEditEquipment={setEditingItem} onViewQR={setViewingQRItem} role={role} />} />
+            <Route path="/" element={<DashboardPage items={items} logs={logs} onSelectItem={setSelectedItem} onAddEquipment={() => setIsAddingEquipment(true)} onEditEquipment={setEditingItem} onDeleteEquipment={handleDeleteItem} onViewQR={setViewingQRItem} role={role} />} />
             <Route path="/scan" element={<ScanPage onScan={handleScanSuccess} />} />
           </Routes>
         )}
@@ -195,18 +244,28 @@ const AppContent: React.FC = () => {
         <div className="bg-slate-900/95 backdrop-blur-2xl border border-white/10 p-2.5 rounded-[2.5rem] shadow-2xl flex justify-around items-center">
           <Link to="/" className={`p-5 rounded-[1.75rem] transition-all ${location.pathname === '/' ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/40' : 'text-slate-500'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg></Link>
           <Link to="/scan" className="relative -mt-14 bg-white p-6 rounded-full shadow-2xl shadow-blue-400 border-[6px] border-slate-900 active:scale-90 transition-transform"><svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg></Link>
-          {role === 'admin' ? <button onClick={() => setIsAddingEquipment(true)} className="p-5 rounded-[1.75rem] text-slate-500 active:text-white transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg></button> : <button onClick={handleLogout} className="p-5 rounded-[1.75rem] text-slate-500 active:text-red-500 transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg></button>}
+          <button onClick={() => setShowSettings(true)} className={`p-5 rounded-[1.75rem] transition-all text-slate-500`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
         </div>
       </div>
 
       {selectedItem && <EquipmentActionModal item={selectedItem} onClose={() => setSelectedItem(null)} onAction={handleAction} />}
       {(isAddingEquipment || editingItem) && <EquipmentFormModal item={editingItem || undefined} onClose={() => { setIsAddingEquipment(false); setEditingItem(null); }} onSave={handleSaveEquipment} />}
       {viewingQRItem && <QRCodeModal item={viewingQRItem} onClose={() => setViewingQRItem(null)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      
+      <CustomAlert 
+        isOpen={alertConfig.isOpen}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={alertConfig.onConfirm}
+      />
     </div>
   );
 };
 
-const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipment, onEditEquipment, onViewQR, role }) => {
+const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipment, onEditEquipment, onDeleteEquipment, onViewQR, role }) => {
   const isAdmin = role === 'admin';
   const stats = useMemo(() => ({ total: items.length, available: items.filter((i:any) => i.status === EquipmentStatus.AVAILABLE).length, inUse: items.filter((i:any) => i.status === EquipmentStatus.IN_USE).length, maintenance: items.filter((i:any) => i.status === EquipmentStatus.MAINTENANCE).length }), [items]);
   return (
@@ -231,7 +290,17 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 pb-24 md:pb-12">
         <div className="xl:col-span-2 space-y-6">
           <div className="flex items-center justify-between px-1"><h2 className="font-black text-2xl text-slate-900 tracking-tighter uppercase">Asset Matrix</h2><div className="text-[10px] font-black text-slate-400 bg-slate-100 px-4 py-1.5 rounded-full uppercase tracking-widest">{items.length} units</div></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{items.map((item:any) => <EquipmentCard key={item.id} item={item} onSelect={onSelectItem} onViewQR={onViewQR} onEdit={onEditEquipment} isAdmin={isAdmin} />)}</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {items.length === 0 ? (
+              <div className="md:col-span-2 py-20 bg-white rounded-[3rem] border border-slate-100 flex flex-col items-center justify-center text-center">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 text-slate-200">
+                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
+                </div>
+                <p className="text-sm font-black text-slate-900 uppercase tracking-widest">Inventory Empty</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Check Cloud Configuration</p>
+              </div>
+            ) : items.map((item:any) => <EquipmentCard key={item.id} item={item} onSelect={onSelectItem} onViewQR={onViewQR} onEdit={onEditEquipment} onDelete={onDeleteEquipment} isAdmin={isAdmin} />)}
+          </div>
         </div>
         <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 flex flex-col h-[600px] md:h-[800px] sticky top-28">
           <div className="p-8 border-b border-slate-50"><h2 className="font-black text-2xl text-slate-900 tracking-tighter uppercase">Telemetry Logs</h2></div>
