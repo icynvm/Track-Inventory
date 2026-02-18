@@ -136,6 +136,10 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
     return groups;
   }, [items]);
 
+  const sortedLogs = useMemo(() => {
+    return [...logs].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }, [logs]);
+
   const categories = useMemo(() => Object.keys(groupedItems).sort(), [groupedItems]);
 
   const stats = useMemo(() => ({
@@ -206,7 +210,7 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
             <div className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
           </div>
           <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1">
-            {logs.length === 0 ? <div className="text-center py-32 text-slate-700 font-bold text-[10px] uppercase tracking-widest">LOGS_OFFLINE</div> : logs.map((log: any) => (
+            {sortedLogs.length === 0 ? <div className="text-center py-32 text-slate-700 font-bold text-[10px] uppercase tracking-widest">LOGS_OFFLINE</div> : sortedLogs.map((log: any) => (
               <div key={log.id} className="flex gap-5 group">
                 <div className={`mt-1 flex-shrink-0 w-11 h-11 rounded-2xl flex items-center justify-center transition-all shadow-xl ${log.action === 'CHECK_OUT' ? 'bg-orange-500 text-white' : 'bg-white text-slate-950'}`}>{log.action === 'CHECK_OUT' ? <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg> : <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M11 16l-4-4m0 0l4-4m-4 4h14" /></svg>}</div>
                 <div className="flex-1 overflow-hidden">
@@ -241,7 +245,7 @@ const ScanPage: React.FC<{ onScan: (id: string) => void }> = ({ onScan }) => (
     </div>
     <Link to="/" className="inline-flex items-center gap-3 text-[11px] font-bold text-slate-500 hover:text-white uppercase tracking-widest transition-all px-8 py-4 glass rounded-2xl border-white/5">
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-      ABORT OPERATION
+      BACK
     </Link>
   </div>
 );
@@ -263,7 +267,7 @@ const QRCodeModal: React.FC<{ item: Equipment; onClose: () => void }> = ({ item,
              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">ASSET_UID</span>
              <span className="text-sm font-mono font-bold text-white truncate ml-4">{item.id}</span>
           </div>
-          <button onClick={onClose} className="w-full py-5 bg-white hover:bg-slate-200 text-slate-950 rounded-2xl font-extrabold text-[11px] uppercase tracking-widest transition-all shadow-xl">TERMINATE VIEW</button>
+          <button onClick={onClose} className="w-full py-5 bg-white hover:bg-slate-200 text-slate-950 rounded-2xl font-extrabold text-[11px] uppercase tracking-widest transition-all shadow-xl"> CLOSE </button>
         </div>
       </div>
     </div>
