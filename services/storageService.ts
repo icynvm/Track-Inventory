@@ -1,26 +1,44 @@
 
 import { Equipment, AuditLog, EquipmentStatus } from '../types';
 
-// This URL should be your Google Apps Script Web App URL
-// On Vercel, set this as an environment variable
-const SHEET_WEBHOOK_URL = (import.meta as any).env?.VITE_SHEET_WEBHOOK_URL || '';
+/**
+ * Robustly get the Webhook URL from environment variables.
+ * Works with Vite (import.meta.env) and standard Node-like (process.env) environments.
+ */
+const getWebhookUrl = (): string => {
+  try {
+    // Check Vite-style env first
+    if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_SHEET_WEBHOOK_URL) {
+      return (import.meta as any).env.VITE_SHEET_WEBHOOK_URL;
+    }
+    // Fallback to process.env if available (common in Vercel/Node build steps)
+    if (typeof process !== 'undefined' && process.env?.VITE_SHEET_WEBHOOK_URL) {
+      return process.env.VITE_SHEET_WEBHOOK_URL;
+    }
+  } catch (e) {
+    console.debug("Environment variable access restricted or unavailable");
+  }
+  return '';
+};
+
+const SHEET_WEBHOOK_URL = getWebhookUrl();
 
 export const storageService = {
   // Helper to handle API calls
   async callWebhook(action: string, payload: any = {}) {
     if (!SHEET_WEBHOOK_URL) {
-      console.warn("Google Sheet Webhook URL not configured. Falling back to local storage simulation.");
+      console.warn("Google Sheet Webhook URL not configured. Ensure VITE_SHEET_WEBHOOK_URL is set in environment variables.");
       return this.fallback(action, payload);
     }
 
     try {
-      const response = await fetch(SHEET_WEBHOOK_URL, {
+      // POST requests to Google Apps Script
+      await fetch(SHEET_WEBHOOK_URL, {
         method: 'POST',
-        mode: 'no-cors', // Apps Script often requires no-cors or redirect handling
+        mode: 'no-cors', // Apps Script requires no-cors for simple redirects
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, ...payload })
       });
-      // Since 'no-cors' doesn't return body data, we usually re-fetch data for the UI
       return true;
     } catch (error) {
       console.error("Webhook Error:", error);
@@ -34,8 +52,11 @@ export const storageService = {
     try {
       const res = await fetch(`${SHEET_WEBHOOK_URL}?type=inventory`);
       const data = await res.json();
+      // Ensure we save a local cache
+      localStorage.setItem('equiptrack_data', JSON.stringify(data));
       return data;
     } catch (e) {
+      console.error("Fetch Items Error, using local cache:", e);
       return JSON.parse(localStorage.getItem('equiptrack_data') || '[]');
     }
   },
@@ -46,8 +67,10 @@ export const storageService = {
     try {
       const res = await fetch(`${SHEET_WEBHOOK_URL}?type=logs`);
       const data = await res.json();
+      localStorage.setItem('equiptrack_logs', JSON.stringify(data));
       return data;
     } catch (e) {
+      console.error("Fetch Logs Error, using local cache:", e);
       return JSON.parse(localStorage.getItem('equiptrack_logs') || '[]');
     }
   },
@@ -64,12 +87,15 @@ export const storageService = {
   },
 
   async addLog(log: Omit<AuditLog, 'id' | 'timestamp'>): Promise<void> {
-    const newLog = { ...log, id: crypto.randomUUID(), timestamp: new Date().toISOString() };
+    const newLog = { 
+      ...log, 
+      id: Math.random().toString(36).substr(2, 9), 
+      timestamp: new Date().toISOString() 
+    };
     await this.callWebhook('add_log', { log: newLog });
     this.fallback('add_log', { log: newLog });
   },
 
-  // Fallback to keep local storage as a cache/backup
   fallback(action: string, payload: any) {
     if (action === 'add_item' || action === 'update_item') {
       const items = JSON.parse(localStorage.getItem('equiptrack_data') || '[]');
