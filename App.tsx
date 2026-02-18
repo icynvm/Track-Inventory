@@ -212,10 +212,10 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
                 <div className="flex-1 overflow-hidden">
                   <p className="text-[14px] leading-snug mb-1">
                     <span className="font-bold text-white uppercase">{log.userName}</span>
-                    <span className="text-slate-500 font-medium"> {log.action === 'CHECK_OUT' ? 'เบิกไปใช้งาน' : 'นำส่งคืน'} </span>
+                    <span className="text-slate-500 font-medium"> {log.action === 'CHECK_OUT' ? 'ขอเบิกใช้งาน' : 'ได้นำส่งคืน'} </span>
                     <span className="font-bold text-white truncate">{log.equipmentName}</span>
                   </p>
-                  <p className="text-[9px] text-slate-600 uppercase font-bold tracking-widest">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {log.projectName ? `@${log.projectName}` : 'BASE_STORAGE'}</p>
+                  <p className="text-[9px] text-slate-600 uppercase font-bold tracking-widest">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {log.projectName ? `@${log.projectName}` : 'อยู่ในตู้สิ่งของ'}</p>
                 </div>
               </div>
             ))}

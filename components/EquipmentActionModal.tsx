@@ -130,7 +130,7 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
                 TRANSMITTING DATA...
               </>
             ) : (
-              isDeploying ? 'CONFIRM DEPLOYMENT' : 'RETURN TO BASE'
+              isDeploying ? 'พร้อมเบิกใช้งาน' : 'นำส่งคืนของ'
             )}
           </button>
         </form>
