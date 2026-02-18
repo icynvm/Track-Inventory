@@ -1,33 +1,17 @@
 
-import { Equipment, AuditLog, EquipmentStatus } from '../types';
+import { Equipment, AuditLog } from '../types';
 
 /**
- * Robustly get the Webhook URL from environment variables.
- * Works with Vite (import.meta.env) and standard Node-like (process.env) environments.
+ * Robustly get the Webhook URL from Vite environment variables.
+ * Note: In Vite, variables must be prefixed with VITE_ to be exposed to the client.
  */
-const getWebhookUrl = (): string => {
-  try {
-    // Check Vite-style env first
-    if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_SHEET_WEBHOOK_URL) {
-      return (import.meta as any).env.VITE_SHEET_WEBHOOK_URL;
-    }
-    // Fallback to process.env if available (common in Vercel/Node build steps)
-    if (typeof process !== 'undefined' && process.env?.VITE_SHEET_WEBHOOK_URL) {
-      return process.env.VITE_SHEET_WEBHOOK_URL;
-    }
-  } catch (e) {
-    console.debug("Environment variable access restricted or unavailable");
-  }
-  return '';
-};
-
-const SHEET_WEBHOOK_URL = getWebhookUrl();
+const SHEET_WEBHOOK_URL = (import.meta as any).env?.VITE_SHEET_WEBHOOK_URL || '';
 
 export const storageService = {
   // Helper to handle API calls
   async callWebhook(action: string, payload: any = {}) {
     if (!SHEET_WEBHOOK_URL) {
-      console.warn("Google Sheet Webhook URL not configured. Ensure VITE_SHEET_WEBHOOK_URL is set in environment variables.");
+      console.warn("Google Sheet Webhook URL not configured. Ensure VITE_SHEET_WEBHOOK_URL is set in Vercel settings.");
       return this.fallback(action, payload);
     }
 
@@ -35,7 +19,7 @@ export const storageService = {
       // POST requests to Google Apps Script
       await fetch(SHEET_WEBHOOK_URL, {
         method: 'POST',
-        mode: 'no-cors', // Apps Script requires no-cors for simple redirects
+        mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, ...payload })
       });
@@ -52,7 +36,6 @@ export const storageService = {
     try {
       const res = await fetch(`${SHEET_WEBHOOK_URL}?type=inventory`);
       const data = await res.json();
-      // Ensure we save a local cache
       localStorage.setItem('equiptrack_data', JSON.stringify(data));
       return data;
     } catch (e) {
