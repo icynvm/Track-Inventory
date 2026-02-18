@@ -1,0 +1,7 @@
+{
+  "name": "EquipTrack Pro",
+  "description": "A professional equipment production tracking system with QR/Barcode scanning capabilities, status management, and real-time audit logs.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
