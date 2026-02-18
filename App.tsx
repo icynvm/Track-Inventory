@@ -91,6 +91,7 @@ const AppContent: React.FC = () => {
   const [items, setItems] = useState<Equipment[]>([]);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [cloudStatus, setCloudStatus] = useState<'connected' | 'offline' | 'error'>('offline');
   const [selectedItem, setSelectedItem] = useState<Equipment | null>(null);
   const [isAddingEquipment, setIsAddingEquipment] = useState(false);
   const [editingItem, setEditingItem] = useState<Equipment | null>(null);
@@ -98,7 +99,6 @@ const AppContent: React.FC = () => {
   const [role, setRole] = useState<UserRole | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Custom Alert State
   const [alertConfig, setAlertConfig] = useState<{
     isOpen: boolean;
     type: AlertType;
@@ -116,13 +116,28 @@ const AppContent: React.FC = () => {
 
   const loadData = async () => {
     setIsLoading(true);
-    const [fetchedItems, fetchedLogs] = await Promise.all([
-      storageService.getItems(),
-      storageService.getLogs()
-    ]);
-    setItems(fetchedItems);
-    setLogs(fetchedLogs);
-    setIsLoading(false);
+    const webhookUrl = storageService.getWebhookUrl();
+    
+    try {
+      const [fetchedItems, fetchedLogs] = await Promise.all([
+        storageService.getItems(),
+        storageService.getLogs()
+      ]);
+      
+      setItems(fetchedItems);
+      setLogs(fetchedLogs);
+      
+      if (webhookUrl) {
+        setCloudStatus(fetchedItems.length > 0 ? 'connected' : 'error');
+      } else {
+        setCloudStatus('offline');
+      }
+    } catch (e) {
+      console.error("Sync Load Failure:", e);
+      setCloudStatus('error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -143,12 +158,17 @@ const AppContent: React.FC = () => {
   };
 
   const handleScanSuccess = (id: string) => {
+    // If scanning, we check the live items list.
     const item = storageService.getItemById(id, items);
     if (item) {
       setSelectedItem(item);
       navigate('/');
     } else {
-      showAlert('error', 'Asset Not Found', `ID ${id} is not registered in the matrix.`);
+      const webhookUrl = storageService.getWebhookUrl();
+      const message = !webhookUrl 
+        ? `ID ${id} not found. You are in OFFLINE mode. Link a Google Sheet to fetch cloud assets.`
+        : `ID ${id} is not registered in the matrix. Verify ID in Google Sheets.`;
+      showAlert('error', 'Asset Identification Failure', message);
     }
   };
 
@@ -210,7 +230,13 @@ const AppContent: React.FC = () => {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center gap-4 group">
             <div className="bg-slate-900 p-3 rounded-[1.25rem] shadow-2xl shadow-slate-200 transition-transform group-hover:rotate-6"><svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" /></svg></div>
-            <div className="leading-none"><span className="text-2xl font-black text-slate-900 tracking-tighter uppercase">EquipTrack</span><div className="text-[10px] font-black text-blue-600 tracking-[0.4em] uppercase mt-1">Matrix Cloud</div></div>
+            <div className="leading-none">
+              <span className="text-2xl font-black text-slate-900 tracking-tighter uppercase">EquipTrack</span>
+              <div className="flex items-center gap-2 mt-1">
+                <div className={`w-2 h-2 rounded-full animate-pulse ${cloudStatus === 'connected' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : cloudStatus === 'error' ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-slate-300'}`}></div>
+                <div className="text-[10px] font-black text-blue-600 tracking-[0.4em] uppercase">{cloudStatus === 'connected' ? 'CLOUD ACTIVE' : cloudStatus === 'error' ? 'SYNC ERROR' : 'LOCAL CACHE'}</div>
+              </div>
+            </div>
           </Link>
           <div className="flex items-center gap-4 md:gap-8">
             {isLoading && <div className="animate-spin text-blue-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></div>}
@@ -230,11 +256,11 @@ const AppContent: React.FC = () => {
         {isLoading && items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-40 animate-pulse text-center">
             <div className="mx-auto w-20 h-2 bg-slate-200 rounded-full mb-4"></div>
-            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Fetching Matrix Data...</p>
+            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Synchronizing Matrix...</p>
           </div>
         ) : (
           <Routes>
-            <Route path="/" element={<DashboardPage items={items} logs={logs} onSelectItem={setSelectedItem} onAddEquipment={() => setIsAddingEquipment(true)} onEditEquipment={setEditingItem} onDeleteEquipment={handleDeleteItem} onViewQR={setViewingQRItem} role={role} />} />
+            <Route path="/" element={<DashboardPage items={items} logs={logs} onSelectItem={setSelectedItem} onAddEquipment={() => setIsAddingEquipment(true)} onEditEquipment={setEditingItem} onDeleteEquipment={handleDeleteItem} onViewQR={setViewingQRItem} role={role} onRefresh={loadData} cloudStatus={cloudStatus} />} />
             <Route path="/scan" element={<ScanPage onScan={handleScanSuccess} />} />
           </Routes>
         )}
@@ -265,9 +291,10 @@ const AppContent: React.FC = () => {
   );
 };
 
-const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipment, onEditEquipment, onDeleteEquipment, onViewQR, role }) => {
+const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipment, onEditEquipment, onDeleteEquipment, onViewQR, role, onRefresh, cloudStatus }) => {
   const isAdmin = role === 'admin';
   const stats = useMemo(() => ({ total: items.length, available: items.filter((i:any) => i.status === EquipmentStatus.AVAILABLE).length, inUse: items.filter((i:any) => i.status === EquipmentStatus.IN_USE).length, maintenance: items.filter((i:any) => i.status === EquipmentStatus.MAINTENANCE).length }), [items]);
+  
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
@@ -277,6 +304,7 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
           <p className="text-slate-400 font-bold text-sm md:text-base uppercase tracking-widest">Active Production Pipeline Assets</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
+          <button onClick={onRefresh} className="p-4 bg-white border-2 border-slate-100 text-slate-400 hover:text-blue-600 rounded-2xl transition-all shadow-sm"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
           {isAdmin && <button onClick={onAddEquipment} className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-100 font-black py-4 px-8 rounded-2xl transition-all active:scale-95 text-[10px] uppercase tracking-widest shadow-sm"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>New Asset</button>}
           <Link to="/scan" className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 px-8 rounded-2xl shadow-xl shadow-blue-200 transition-all active:scale-95 text-[10px] uppercase tracking-widest"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg>Scan Check</Link>
         </div>
@@ -289,15 +317,24 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 pb-24 md:pb-12">
         <div className="xl:col-span-2 space-y-6">
-          <div className="flex items-center justify-between px-1"><h2 className="font-black text-2xl text-slate-900 tracking-tighter uppercase">Asset Matrix</h2><div className="text-[10px] font-black text-slate-400 bg-slate-100 px-4 py-1.5 rounded-full uppercase tracking-widest">{items.length} units</div></div>
+          <div className="flex items-center justify-between px-1">
+            <h2 className="font-black text-2xl text-slate-900 tracking-tighter uppercase">Asset Matrix</h2>
+            <div className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest ${cloudStatus === 'connected' ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+              {cloudStatus === 'connected' ? 'Cloud Synced' : 'Local Only'} • {items.length} units
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {items.length === 0 ? (
-              <div className="md:col-span-2 py-20 bg-white rounded-[3rem] border border-slate-100 flex flex-col items-center justify-center text-center">
+              <div className="md:col-span-2 py-20 bg-white rounded-[3rem] border border-slate-100 flex flex-col items-center justify-center text-center p-8">
                 <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 text-slate-200">
                   <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
                 </div>
-                <p className="text-sm font-black text-slate-900 uppercase tracking-widest">Inventory Empty</p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Check Cloud Configuration</p>
+                <p className="text-lg font-black text-slate-900 uppercase tracking-widest">Database Offline</p>
+                <p className="text-sm text-slate-400 font-bold uppercase tracking-widest mt-2 max-w-sm">No assets detected. Please link your Google Sheet URL in settings to pull production gear.</p>
+                <div className="mt-8 flex gap-3">
+                   <button onClick={onRefresh} className="px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-slate-800">Retry Connection</button>
+                   {isAdmin && <button onClick={onAddEquipment} className="px-6 py-3 bg-white border border-slate-100 rounded-xl text-[10px] font-black text-slate-900 uppercase tracking-widest transition-all hover:bg-slate-50">Manual Entry</button>}
+                </div>
               </div>
             ) : items.map((item:any) => <EquipmentCard key={item.id} item={item} onSelect={onSelectItem} onViewQR={onViewQR} onEdit={onEditEquipment} onDelete={onDeleteEquipment} isAdmin={isAdmin} />)}
           </div>
@@ -341,7 +378,7 @@ const App: React.FC = () => (
 const QRCodeModal: React.FC<{ item: Equipment; onClose: () => void }> = ({ item, onClose }) => {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-2xl p-4 animate-in fade-in duration-300">
-      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-sm overflow-hidden transform animate-in zoom-in duration-300">
+      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-sm:max-w-xs w-full max-w-sm overflow-hidden transform animate-in zoom-in duration-300">
         <div className="p-8 border-b border-slate-100 flex justify-between items-center">
           <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Label</h2>
           <button onClick={onClose} className="w-12 h-12 flex items-center justify-center bg-slate-100 rounded-2xl text-slate-500 hover:text-slate-900 transition-colors">
