@@ -3,15 +3,24 @@ import { Equipment, AuditLog } from '../types';
 
 /**
  * Robustly get the Webhook URL from Vite environment variables.
- * Note: In Vite, variables must be prefixed with VITE_ to be exposed to the client.
+ * In Vite, variables must be prefixed with VITE_ to be exposed to the client.
  */
-const SHEET_WEBHOOK_URL = (import.meta as any).env?.VITE_SHEET_WEBHOOK_URL || '';
+const getWebhookUrl = (): string => {
+  // @ts-ignore
+  const env = import.meta.env;
+  if (env && env.VITE_SHEET_WEBHOOK_URL) {
+    return env.VITE_SHEET_WEBHOOK_URL;
+  }
+  return '';
+};
+
+const SHEET_WEBHOOK_URL = getWebhookUrl();
 
 export const storageService = {
   // Helper to handle API calls
   async callWebhook(action: string, payload: any = {}) {
     if (!SHEET_WEBHOOK_URL) {
-      console.warn("Google Sheet Webhook URL not configured. Ensure VITE_SHEET_WEBHOOK_URL is set in Vercel settings.");
+      console.warn("Google Sheet Webhook URL not configured. Go to Vercel Settings > Environment Variables and add VITE_SHEET_WEBHOOK_URL.");
       return this.fallback(action, payload);
     }
 
@@ -36,8 +45,10 @@ export const storageService = {
     try {
       const res = await fetch(`${SHEET_WEBHOOK_URL}?type=inventory`);
       const data = await res.json();
-      localStorage.setItem('equiptrack_data', JSON.stringify(data));
-      return data;
+      // Clean undefined values from the fetch
+      const cleaned = data.filter((item: any) => item.id);
+      localStorage.setItem('equiptrack_data', JSON.stringify(cleaned));
+      return cleaned;
     } catch (e) {
       console.error("Fetch Items Error, using local cache:", e);
       return JSON.parse(localStorage.getItem('equiptrack_data') || '[]');
@@ -50,8 +61,9 @@ export const storageService = {
     try {
       const res = await fetch(`${SHEET_WEBHOOK_URL}?type=logs`);
       const data = await res.json();
-      localStorage.setItem('equiptrack_logs', JSON.stringify(data));
-      return data;
+      const cleaned = data.filter((log: any) => log.id);
+      localStorage.setItem('equiptrack_logs', JSON.stringify(cleaned));
+      return cleaned;
     } catch (e) {
       console.error("Fetch Logs Error, using local cache:", e);
       return JSON.parse(localStorage.getItem('equiptrack_logs') || '[]');
