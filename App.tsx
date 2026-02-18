@@ -16,25 +16,25 @@ const LOGO_URL = 'https://img2.pic.in.th/7289a7bc-643b-4c94-96a8-9a8826277950.pn
 
 // --- Login Screen ---
 const LoginPage: React.FC<{ onLogin: (role: UserRole) => void }> = ({ onLogin }) => (
-  <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
+  <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6 overflow-hidden">
     <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
       <div className="text-center space-y-4">
         <div className="mx-auto w-24 h-24 bg-white p-2 rounded-[2rem] shadow-2xl flex items-center justify-center overflow-hidden border border-slate-100">
           <img src={LOGO_URL} alt="Logo" className="w-full h-full object-contain" />
         </div>
         <div className="space-y-1">
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">EquipTrack<span className="text-blue-600">Pro</span></h1>
-          <p className="text-slate-400 text-sm font-bold uppercase tracking-[0.2em]">Fast Sync Terminal</p>
+          <h1 className="text-4xl font-bold text-slate-900 tracking-tighter uppercase">EquipTrack<span className="text-blue-600">Pro</span></h1>
+          <p className="text-slate-400 text-sm font-medium uppercase tracking-[0.2em]">Fast Sync Terminal</p>
         </div>
       </div>
       <div className="space-y-4">
         <button onClick={() => onLogin('user')} className="group relative w-full p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-sm hover:border-blue-500 hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center gap-4">
           <div className="w-14 h-14 bg-slate-50 group-hover:bg-blue-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition-colors"><svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg></div>
-          <div><span className="block text-lg font-black text-slate-900 tracking-tight">Production Crew</span><span className="block text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Instant Check</span></div>
+          <div><span className="block text-lg font-bold text-slate-900 tracking-tight">Production Crew</span><span className="block text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Instant Check</span></div>
         </button>
         <button onClick={() => onLogin('admin')} className="group relative w-full p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-sm hover:border-slate-900 hover:shadow-xl transition-all duration-300 flex flex-col items-center text-center gap-4">
           <div className="w-14 h-14 bg-slate-50 group-hover:bg-slate-900 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-white transition-colors"><svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></div>
-          <div><span className="block text-lg font-black text-slate-900 tracking-tight">Asset Manager</span><span className="block text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Fleet Management</span></div>
+          <div><span className="block text-lg font-bold text-slate-900 tracking-tight">Asset Manager</span><span className="block text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Fleet Management</span></div>
         </button>
       </div>
     </div>
@@ -43,11 +43,11 @@ const LoginPage: React.FC<{ onLogin: (role: UserRole) => void }> = ({ onLogin })
 
 // --- Sub-components ---
 const StatCard: React.FC<{ label: string; value: number; color: string; icon: React.ReactNode }> = ({ label, value, color, icon }) => (
-  <div className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4 transition-transform hover:scale-[1.02]">
-    <div className={`p-4 rounded-2xl ${color}`}>{icon}</div>
+  <div className="bg-white p-4 md:p-6 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4 transition-transform hover:scale-[1.02] w-full">
+    <div className={`p-4 rounded-2xl flex-shrink-0 ${color}`}>{icon}</div>
     <div className="overflow-hidden">
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">{label}</p>
-      <p className="text-2xl font-black text-slate-900">{value}</p>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">{label}</p>
+      <p className="text-xl md:text-2xl font-bold text-slate-900 leading-tight">{value}</p>
     </div>
   </div>
 );
@@ -68,14 +68,14 @@ const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => 
   };
 
   return (
-    <div className="bg-white p-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col gap-5 active:bg-slate-50 transition-all hover:shadow-xl hover:-translate-y-1" onClick={() => onSelect(item)}>
+    <div className="bg-white p-4 md:p-5 rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col gap-4 md:gap-5 active:bg-slate-50 transition-all hover:shadow-lg w-full" onClick={() => onSelect(item)}>
       <div className="flex items-center gap-4">
-        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex-shrink-0 overflow-hidden border border-slate-200 shadow-inner">
+        <div className="w-14 h-14 md:w-16 md:h-16 bg-slate-100 rounded-2xl flex-shrink-0 overflow-hidden border border-slate-200 shadow-inner">
           {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-200"><svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4" /></svg></div>}
         </div>
         <div className="flex-1 overflow-hidden">
           <div className="flex items-center justify-between gap-2">
-            <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${statusColors[item.status]}`}>
+            <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest ${statusColors[item.status]}`}>
               {statusLabel[item.status]}
             </span>
             <div className="flex gap-1">
@@ -88,15 +88,15 @@ const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => 
               )}
             </div>
           </div>
-          <h3 className="font-black text-slate-900 tracking-tight truncate mt-1">{item.name}</h3>
-          <p className="text-[10px] text-slate-400 font-mono font-black uppercase tracking-widest">{item.id}</p>
+          <h3 className="font-bold text-slate-900 tracking-tight truncate mt-1 leading-tight">{item.name}</h3>
+          <p className="text-[10px] text-slate-400 font-mono font-medium uppercase tracking-widest">{item.id}</p>
         </div>
       </div>
-      <div className="flex items-center justify-between text-[10px] pt-4 border-t border-slate-50 font-black tracking-widest uppercase">
+      <div className="flex items-center justify-between text-[10px] pt-4 border-t border-slate-50 font-bold tracking-widest uppercase">
         <div className="text-slate-400">{item.category}</div>
         <div className="text-right">{item.currentHolder ? <div className="text-orange-600 truncate max-w-[100px]">{item.currentHolder}</div> : <div className="text-slate-200">BASE STORAGE</div>}</div>
       </div>
-      {item.projectName && <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest self-start shadow-lg shadow-slate-100">@{item.projectName}</div>}
+      {item.projectName && <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-widest self-start shadow-lg shadow-slate-100">@{item.projectName}</div>}
     </div>
   );
 };
@@ -105,7 +105,6 @@ const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => 
 const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipment, onEditEquipment, onDeleteEquipment, onViewQR, role, onRefresh, isSyncing }) => {
   const isAdmin = role === 'admin';
   
-  // Group and Sort by Category
   const groupedItems = useMemo(() => {
     const groups: { [key: string]: Equipment[] } = {};
     items.forEach((item: Equipment) => {
@@ -114,7 +113,6 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
       groups[cat].push(item);
     });
     
-    // Sort items within each group alphabetically
     Object.keys(groups).forEach(key => {
       groups[key].sort((a, b) => a.name.localeCompare(b.name));
     });
@@ -132,24 +130,24 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
   }), [items]);
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
+    <div className="space-y-8 md:space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700 max-w-full">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-1">
         <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <span className="px-3 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg">{role} terminal</span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="px-3 py-1 bg-slate-900 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg">{role} terminal</span>
             {isSyncing && (
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-[10px] font-black text-orange-600 tracking-widest uppercase">Cloud Processing...</span>
+                <span className="text-[10px] font-bold text-orange-600 tracking-widest uppercase">Cloud Processing...</span>
               </div>
             )}
           </div>
-          <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter uppercase leading-none">Inventory</h1>
+          <h1 className="text-4xl md:text-6xl font-bold text-slate-900 tracking-tighter uppercase leading-none">Inventory</h1>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <button onClick={onRefresh} className={`p-4 bg-white border-2 border-slate-100 text-slate-400 hover:text-blue-600 rounded-2xl transition-all shadow-sm ${isSyncing ? 'animate-spin' : ''}`}><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
-          {isAdmin && <button onClick={onAddEquipment} className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-100 font-black py-4 px-8 rounded-2xl transition-all active:scale-95 text-[10px] uppercase tracking-widest shadow-sm"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>Register</button>}
-          <Link to="/scan" className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-black py-4 px-8 rounded-2xl shadow-xl shadow-orange-200 transition-all active:scale-95 text-[10px] uppercase tracking-widest"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg>Fast Scan</Link>
+          {isAdmin && <button onClick={onAddEquipment} className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-100 font-bold py-4 px-6 md:px-8 rounded-2xl transition-all active:scale-95 text-[10px] uppercase tracking-widest shadow-sm"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>Register</button>}
+          <Link to="/scan" className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 px-6 md:px-8 rounded-2xl shadow-xl shadow-orange-200 transition-all active:scale-95 text-[10px] uppercase tracking-widest"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg>Fast Scan</Link>
         </div>
       </header>
 
@@ -163,16 +161,16 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 pb-24 md:pb-12">
         <div className="xl:col-span-2 space-y-12">
           {categories.length === 0 ? (
-            <div className="py-32 bg-white rounded-[3rem] border border-slate-100 flex flex-col items-center justify-center text-center p-8">
-               <p className="text-lg font-black text-slate-900 uppercase tracking-widest">Database Clean</p>
-               <button onClick={onRefresh} className="mt-4 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Pull From Cloud</button>
+            <div className="py-24 md:py-32 bg-white rounded-[2rem] md:rounded-[3rem] border border-slate-100 flex flex-col items-center justify-center text-center p-8">
+               <p className="text-lg font-bold text-slate-900 uppercase tracking-widest">Database Clean</p>
+               <button onClick={onRefresh} className="mt-4 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest">Pull From Cloud</button>
             </div>
           ) : categories.map(cat => (
             <div key={cat} className="space-y-6">
               <div className="flex items-center gap-4 px-1">
-                <h2 className="font-black text-2xl text-slate-900 tracking-tighter uppercase whitespace-nowrap">{cat}</h2>
+                <h2 className="font-bold text-2xl text-slate-900 tracking-tighter uppercase whitespace-nowrap">{cat}</h2>
                 <div className="h-px w-full bg-slate-100"></div>
-                <div className="px-3 py-1 bg-slate-100 rounded-lg text-[9px] font-black text-slate-400 uppercase tracking-widest">{groupedItems[cat].length} units</div>
+                <div className="px-3 py-1 bg-slate-100 rounded-lg text-[9px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">{groupedItems[cat].length} units</div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {groupedItems[cat].map((item: any) => (
@@ -183,22 +181,22 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
           ))}
         </div>
         
-        <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 flex flex-col h-[600px] md:h-[800px] sticky top-28">
-          <div className="p-8 border-b border-slate-50 flex justify-between items-center">
-            <h2 className="font-black text-2xl text-slate-900 tracking-tighter uppercase">Audit Stream</h2>
+        <div className="bg-white rounded-[2rem] md:rounded-[3rem] shadow-sm border border-slate-100 flex flex-col h-[500px] md:h-[800px] xl:sticky xl:top-28">
+          <div className="p-6 md:p-8 border-b border-slate-50 flex justify-between items-center flex-shrink-0">
+            <h2 className="font-bold text-2xl text-slate-900 tracking-tighter uppercase">Audit Stream</h2>
             <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
           </div>
-          <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar">
-            {logs.length === 0 ? <div className="text-center py-32 text-slate-300 font-black text-[10px] uppercase tracking-widest">No Logs</div> : logs.map((log: any) => (
-              <div key={log.id} className="flex gap-5 group">
+          <div className="p-6 md:p-8 space-y-8 overflow-y-auto custom-scrollbar flex-1">
+            {logs.length === 0 ? <div className="text-center py-24 text-slate-300 font-bold text-[10px] uppercase tracking-widest">No Logs</div> : logs.map((log: any) => (
+              <div key={log.id} className="flex gap-4 md:gap-5 group">
                 <div className={`mt-1 flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md ${log.action === 'CHECK_OUT' ? 'bg-orange-600 text-white' : 'bg-slate-900 text-white'}`}>{log.action === 'CHECK_OUT' ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg> : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M11 16l-4-4m0 0l4-4m-4 4h14" /></svg>}</div>
                 <div className="flex-1 overflow-hidden">
                   <p className="text-[13px] leading-tight mb-1">
-                    <span className="font-black text-slate-900 uppercase">{log.userName}</span>
-                    <span className="text-slate-400 font-bold"> {log.action === 'CHECK_OUT' ? 'เบิกไปใช้งาน' : 'นำส่งคืน'} </span>
-                    <span className="font-black text-slate-900 truncate">{log.equipmentName}</span>
+                    <span className="font-bold text-slate-900 uppercase">{log.userName}</span>
+                    <span className="text-slate-400 font-medium"> {log.action === 'CHECK_OUT' ? 'เบิกไปใช้งาน' : 'นำส่งคืน'} </span>
+                    <span className="font-bold text-slate-900 truncate">{log.equipmentName}</span>
                   </p>
-                  <p className="text-[9px] text-slate-300 uppercase font-black tracking-widest">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {log.projectName ? `@${log.projectName}` : 'BASE'}</p>
+                  <p className="text-[9px] text-slate-300 uppercase font-bold tracking-widest">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {log.projectName ? `@${log.projectName}` : 'BASE'}</p>
                 </div>
               </div>
             ))}
@@ -212,19 +210,19 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
 // --- Scanner Component ---
 const ScanPage: React.FC<{ onScan: (id: string) => void }> = ({ onScan }) => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] py-10 space-y-10 animate-in fade-in slide-in-from-bottom-10 duration-700">
-    <div className="text-center space-y-3">
+    <div className="text-center space-y-3 px-4">
       <div className="mx-auto w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white mb-4">
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" />
         </svg>
       </div>
-      <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Optical Scan</h2>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Acquiring Target Asset Matrix</p>
+      <h2 className="text-3xl font-bold text-slate-900 tracking-tighter uppercase">Optical Scan</h2>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Acquiring Target Asset Matrix</p>
     </div>
-    <div className="w-full max-w-sm">
+    <div className="w-full max-w-sm px-4">
       <Scanner onScanSuccess={onScan} isActive={true} />
     </div>
-    <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-all">
+    <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-all">
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
       Abort Mission
     </Link>
@@ -233,22 +231,22 @@ const ScanPage: React.FC<{ onScan: (id: string) => void }> = ({ onScan }) => (
 
 // --- QR Modal Component ---
 const QRCodeModal: React.FC<{ item: Equipment; onClose: () => void }> = ({ item, onClose }) => (
-  <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/90 backdrop-blur-2xl p-4 animate-in fade-in duration-300">
-    <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-sm overflow-hidden transform animate-in zoom-in slide-in-from-bottom-10 duration-500">
-      <div className="p-8 flex flex-col items-center text-center space-y-8">
+  <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/90 backdrop-blur-2xl p-4 animate-in fade-in duration-300 overflow-hidden">
+    <div className="bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl w-full max-w-sm overflow-hidden transform animate-in zoom-in slide-in-from-bottom-10 duration-500">
+      <div className="p-6 md:p-8 flex flex-col items-center text-center space-y-6 md:space-y-8">
         <div className="space-y-2">
-          <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">{item.category}</p>
-          <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase leading-none">{item.name}</h2>
+          <p className="text-[10px] font-bold text-blue-600 uppercase tracking-[0.3em]">{item.category}</p>
+          <h2 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tighter uppercase leading-none">{item.name}</h2>
         </div>
-        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 shadow-inner flex items-center justify-center">
-          <QRCodeSVG value={item.id} size={200} level="H" includeMargin={false} />
+        <div className="p-6 md:p-8 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner flex items-center justify-center w-full max-w-[280px]">
+          <QRCodeSVG value={item.id} size={180} level="H" includeMargin={false} className="w-full h-auto" />
         </div>
         <div className="space-y-4 w-full">
-          <div className="bg-slate-900 px-6 py-4 rounded-2xl flex items-center justify-between">
-             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Asset UID</span>
-             <span className="text-sm font-mono font-black text-white">{item.id}</span>
+          <div className="bg-slate-900 px-5 md:px-6 py-4 rounded-2xl flex items-center justify-between">
+             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Asset UID</span>
+             <span className="text-sm font-mono font-bold text-white truncate ml-2">{item.id}</span>
           </div>
-          <button onClick={onClose} className="w-full py-5 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all">Close Terminal</button>
+          <button onClick={onClose} className="w-full py-5 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all">Close Terminal</button>
         </div>
       </div>
     </div>
@@ -384,35 +382,35 @@ const AppContent: React.FC = () => {
   if (!role) return <LoginPage onLogin={handleLogin} />;
 
   return (
-    <div className="min-h-screen pb-32 md:pb-16 bg-[#fbfcfd]">
-      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-3xl border-b border-slate-100 px-6 py-4 mb-4 md:mb-10">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-4 group">
-            <div className="w-12 h-12 bg-white p-1 rounded-xl shadow-xl shadow-slate-200 transition-transform group-hover:rotate-6 flex items-center justify-center overflow-hidden border border-slate-100">
+    <div className="min-h-screen pb-32 md:pb-16 bg-[#fbfcfd] w-full max-w-[100vw] overflow-x-hidden">
+      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-3xl border-b border-slate-100 px-4 md:px-6 py-4 mb-4 md:mb-10 w-full">
+        <div className="max-w-7xl mx-auto flex items-center justify-between w-full">
+          <Link to="/" className="flex items-center gap-3 md:gap-4 group overflow-hidden">
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-white p-1 rounded-xl shadow-xl shadow-slate-200 transition-transform group-hover:rotate-6 flex items-center justify-center overflow-hidden border border-slate-100 flex-shrink-0">
                <img src={LOGO_URL} alt="Logo" className="w-full h-full object-contain" />
             </div>
-            <div className="leading-none">
-              <span className="text-xl font-black text-slate-900 tracking-tighter uppercase">EquipTrack</span>
+            <div className="leading-none overflow-hidden">
+              <span className="text-lg md:text-xl font-bold text-slate-900 tracking-tighter uppercase whitespace-nowrap">EquipTrack</span>
               <div className="flex items-center gap-2 mt-0.5">
-                <div className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-orange-500 animate-ping' : cloudStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <div className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase">{isSyncing ? 'SYNCING...' : cloudStatus === 'connected' ? `READY ${lastSyncTime}` : 'OFFLINE'}</div>
+                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isSyncing ? 'bg-orange-500 animate-ping' : cloudStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div className="text-[8px] md:text-[9px] font-bold text-slate-400 tracking-[0.2em] uppercase whitespace-nowrap">{isSyncing ? 'SYNCING...' : cloudStatus === 'connected' ? `READY` : 'OFFLINE'}</div>
               </div>
             </div>
           </Link>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-6">
-              <Link to="/" className={`text-[10px] font-black tracking-widest transition-colors ${location.pathname === '/' ? 'text-orange-600' : 'text-slate-400'}`}>DASHBOARD</Link>
-              <Link to="/scan" className={`text-[10px] font-black tracking-widest transition-colors ${location.pathname === '/scan' ? 'text-orange-600' : 'text-slate-400'}`}>SCAN</Link>
+              <Link to="/" className={`text-[10px] font-bold tracking-widest transition-colors ${location.pathname === '/' ? 'text-orange-600' : 'text-slate-400'}`}>DASHBOARD</Link>
+              <Link to="/scan" className={`text-[10px] font-bold tracking-widest transition-colors ${location.pathname === '/scan' ? 'text-orange-600' : 'text-slate-400'}`}>SCAN</Link>
               <button onClick={() => setShowSettings(true)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
             </div>
-            <button onClick={handleLogout} className="text-[9px] font-black text-slate-900 tracking-widest uppercase bg-slate-50 px-4 py-2 rounded-full border border-slate-100">Exit</button>
+            <button onClick={handleLogout} className="text-[9px] font-bold text-slate-900 tracking-widest uppercase bg-slate-50 px-4 py-2 rounded-full border border-slate-100">Exit</button>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 w-full">
         {isLoading && items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-40 animate-pulse"><div className="w-12 h-12 border-4 border-slate-100 border-t-orange-500 rounded-full animate-spin mb-4"></div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Warming Up...</p></div>
+          <div className="flex flex-col items-center justify-center py-40 animate-pulse"><div className="w-12 h-12 border-4 border-slate-100 border-t-orange-500 rounded-full animate-spin mb-4"></div><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center px-4">Warming Up Assets...</p></div>
         ) : (
           <Routes>
             <Route path="/" element={<DashboardPage items={items} logs={logs} onSelectItem={setSelectedItem} onAddEquipment={() => setIsAddingEquipment(true)} onEditEquipment={setEditingItem} onDeleteEquipment={handleDeleteItem} onViewQR={setViewingQRItem} role={role} onRefresh={() => { setSyncLock(false); loadData(); }} isSyncing={isSyncing} />} />
