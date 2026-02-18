@@ -14,11 +14,11 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({ item, onClose, 
   const [imageUrl, setImageUrl] = useState(item?.imageUrl || '');
   const [customId, setCustomId] = useState(item?.id || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isEdit = !!item;
 
-  // Ensure internal state updates if item prop changes (though rare in this modal pattern)
   useEffect(() => {
     if (item) {
       setName(item.name);
@@ -28,16 +28,38 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({ item, onClose, 
     }
   }, [item]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // FIX: Added compression logic to ensure image fits in Google Sheet cells
+  const compressImage = (base64: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 400; // Small but clear enough for inventory
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // Compress heavily (0.6 quality) to ensure it stays under GAS/Sheet limits
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+        resolve(compressedBase64);
+      };
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) { 
-        alert("Image is too large. Limit is 1MB for smooth cloud sync.");
-        return;
-      }
+      setIsCompressing(true);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrl(reader.result as string);
+      reader.onloadend = async () => {
+        const rawBase64 = reader.result as string;
+        const compressed = await compressImage(rawBase64);
+        setImageUrl(compressed);
+        setIsCompressing(false);
       };
       reader.readAsDataURL(file);
     }
@@ -51,7 +73,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({ item, onClose, 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || isCompressing) return;
     
     setIsSubmitting(true);
     const id = customId || `EQ-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
@@ -93,10 +115,15 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({ item, onClose, 
         <form onSubmit={handleSubmit} className="p-8 space-y-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
           <div className="flex flex-col items-center gap-4">
             <div 
-              onClick={() => !isSubmitting && fileInputRef.current?.click()}
-              className={`relative group cursor-pointer w-full aspect-video md:aspect-[21/9] rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden transition-all ${!isSubmitting ? 'hover:border-blue-400 hover:bg-white' : 'opacity-50 cursor-not-allowed'}`}
+              onClick={() => !isSubmitting && !isCompressing && fileInputRef.current?.click()}
+              className={`relative group cursor-pointer w-full aspect-video md:aspect-[21/9] rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden transition-all ${!isSubmitting && !isCompressing ? 'hover:border-blue-400 hover:bg-white' : 'opacity-50 cursor-not-allowed'}`}
             >
-              {imageUrl ? (
+              {isCompressing ? (
+                 <div className="flex flex-col items-center gap-2">
+                    <div className="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Shrinking Media...</p>
+                 </div>
+              ) : imageUrl ? (
                 <>
                   <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
                   <button 
@@ -111,12 +138,12 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({ item, onClose, 
                   <div className="mx-auto w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-slate-400">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   </div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tap to Upload Image</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Upload Item Photo</p>
                 </div>
               )}
-              {!isSubmitting && imageUrl && (
+              {!isSubmitting && imageUrl && !isCompressing && (
                 <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                   <span className="text-white text-[10px] font-black uppercase tracking-[0.2em] bg-slate-900/60 px-6 py-3 rounded-xl backdrop-blur-md border border-white/20">Replace Media</span>
+                   <span className="text-white text-[10px] font-black uppercase tracking-[0.2em] bg-slate-900/60 px-6 py-3 rounded-xl backdrop-blur-md border border-white/20">Change Photo</span>
                 </div>
               )}
             </div>
@@ -158,19 +185,19 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({ item, onClose, 
               type="button" disabled={isSubmitting} onClick={onClose}
               className="order-2 md:order-1 flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all disabled:opacity-50"
             >
-              Abort
+              Discard
             </button>
             <button 
-              type="submit" disabled={isSubmitting}
+              type="submit" disabled={isSubmitting || isCompressing}
               className="order-1 md:order-2 flex-[2] py-4 bg-slate-900 hover:bg-blue-600 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-slate-200 disabled:bg-slate-400 flex items-center justify-center gap-3"
             >
               {isSubmitting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                  Finalizing...
+                  Syncing Cloud...
                 </>
               ) : (
-                isEdit ? 'Save Changes' : 'Initialize Asset'
+                isEdit ? 'Save Changes' : 'Register Asset'
               )}
             </button>
           </div>

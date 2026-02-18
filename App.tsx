@@ -91,19 +91,24 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const isAdmin = role === 'admin';
   
-  const categories = useMemo(() => {
-    const cats = new Set<string>();
-    items.forEach((item: Equipment) => { if (item.category) cats.add(item.category.toUpperCase().trim()); });
-    return Array.from(cats).sort();
+  // Group items by category for easy findout
+  const groupedItems = useMemo(() => {
+    const groups: { [key: string]: Equipment[] } = {};
+    items.forEach((item: Equipment) => {
+      const cat = (item.category || 'Uncategorized').toUpperCase().trim();
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(item);
+    });
+    
+    // Sort items within each group
+    Object.keys(groups).forEach(key => {
+      groups[key].sort((a, b) => a.name.localeCompare(b.name));
+    });
+
+    return groups;
   }, [items]);
 
-  const filteredItems = useMemo(() => {
-    let list = activeCategory 
-      ? items.filter((item: Equipment) => item.category?.toUpperCase().trim() === activeCategory)
-      : items;
-    // Sort by name within the filter
-    return [...list].sort((a, b) => a.name.localeCompare(b.name));
-  }, [items, activeCategory]);
+  const categories = useMemo(() => Object.keys(groupedItems).sort(), [groupedItems]);
 
   const stats = useMemo(() => ({
     total: items.length,
@@ -121,7 +126,7 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
             {isSyncing && (
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-[10px] font-black text-blue-600 tracking-widest uppercase">Fetching Cloud...</span>
+                <span className="text-[10px] font-black text-blue-600 tracking-widest uppercase">Cloud Sync...</span>
               </div>
             )}
           </div>
@@ -142,43 +147,26 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 pb-24 md:pb-12">
-        <div className="xl:col-span-2 space-y-6">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <h2 className="font-black text-2xl text-slate-900 tracking-tighter uppercase">Asset Matrix</h2>
-              <div className="text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest bg-slate-100 text-slate-400">
-                {filteredItems.length} {activeCategory ? `${activeCategory} units` : 'Total units'}
+        <div className="xl:col-span-2 space-y-12">
+          {categories.length === 0 ? (
+            <div className="py-32 bg-white rounded-[3rem] border border-slate-100 flex flex-col items-center justify-center text-center p-8">
+               <p className="text-lg font-black text-slate-900 uppercase tracking-widest">Database Clean</p>
+               <button onClick={onRefresh} className="mt-4 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Connect Matrix</button>
+            </div>
+          ) : categories.map(cat => (
+            <div key={cat} className="space-y-6">
+              <div className="flex items-center gap-4 px-1">
+                <h2 className="font-black text-2xl text-slate-900 tracking-tighter uppercase whitespace-nowrap">{cat}</h2>
+                <div className="h-px w-full bg-slate-100"></div>
+                <div className="px-3 py-1 bg-slate-100 rounded-lg text-[9px] font-black text-slate-400 uppercase tracking-widest">{groupedItems[cat].length} units</div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {groupedItems[cat].map((item: any) => (
+                  <EquipmentCard key={item.id} item={item} onSelect={onSelectItem} onViewQR={onViewQR} onEdit={onEditEquipment} onDelete={onDeleteEquipment} isAdmin={isAdmin} />
+                ))}
               </div>
             </div>
-            
-            <div className="flex gap-2 overflow-x-auto pb-4 custom-scrollbar">
-              <button 
-                onClick={() => setActiveCategory(null)}
-                className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 ${!activeCategory ? 'bg-slate-900 text-white border-slate-900 shadow-xl shadow-slate-200' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300'}`}
-              >
-                All Assets
-              </button>
-              {categories.map(cat => (
-                <button 
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 ${activeCategory === cat ? 'bg-blue-600 text-white border-blue-600 shadow-xl shadow-blue-100' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300'}`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredItems.length === 0 ? (
-              <div className="md:col-span-2 py-32 bg-white rounded-[3rem] border border-slate-100 flex flex-col items-center justify-center text-center p-8">
-                 <p className="text-lg font-black text-slate-900 uppercase tracking-widest">No Matches</p>
-                 <p className="text-xs text-slate-400 font-bold mt-2 uppercase tracking-widest">No assets found for "{activeCategory}"</p>
-                 <button onClick={() => setActiveCategory(null)} className="mt-6 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Reset Filters</button>
-              </div>
-            ) : filteredItems.map((item: any) => <EquipmentCard key={item.id} item={item} onSelect={onSelectItem} onViewQR={onViewQR} onEdit={onEditEquipment} onDelete={onDeleteEquipment} isAdmin={isAdmin} />)}
-          </div>
+          ))}
         </div>
         
         <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 flex flex-col h-[600px] md:h-[800px] sticky top-28">
@@ -203,7 +191,7 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
   );
 };
 
-// --- Fix: Added missing ScanPage component ---
+// --- Missing Components Added ---
 const ScanPage: React.FC<{ onScan: (id: string) => void }> = ({ onScan }) => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] py-10 space-y-10 animate-in fade-in slide-in-from-bottom-10 duration-700">
     <div className="text-center space-y-3">
@@ -225,7 +213,6 @@ const ScanPage: React.FC<{ onScan: (id: string) => void }> = ({ onScan }) => (
   </div>
 );
 
-// --- Fix: Added missing QRCodeModal component ---
 const QRCodeModal: React.FC<{ item: Equipment; onClose: () => void }> = ({ item, onClose }) => (
   <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/90 backdrop-blur-2xl p-4 animate-in fade-in duration-300">
     <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-sm overflow-hidden transform animate-in zoom-in slide-in-from-bottom-10 duration-500">
@@ -234,11 +221,9 @@ const QRCodeModal: React.FC<{ item: Equipment; onClose: () => void }> = ({ item,
           <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">{item.category}</p>
           <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase leading-none">{item.name}</h2>
         </div>
-        
         <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 shadow-inner flex items-center justify-center">
           <QRCodeSVG value={item.id} size={200} level="H" includeMargin={false} />
         </div>
-        
         <div className="space-y-4 w-full">
           <div className="bg-slate-900 px-6 py-4 rounded-2xl flex items-center justify-between">
              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Asset UID</span>
@@ -277,7 +262,7 @@ const AppContent: React.FC = () => {
   const navigate = useNavigate();
 
   const loadData = async (background = false) => {
-    if (syncLock) return; // Prevent stale overwrites during update windows
+    if (syncLock) return; // FIX: Prevent stale data from overwriting local updates
     if (!background) setIsLoading(true);
     setIsSyncing(true);
     const webhookUrl = storageService.getWebhookUrl();
@@ -315,13 +300,15 @@ const AppContent: React.FC = () => {
     else { showAlert('error', 'Asset Not Found', `ID ${id} is missing from local cache.`); }
   };
 
+  // FIX: Lock background refreshes for 5 seconds after a save to let Google Sheets catch up
   const lockSync = () => {
     setSyncLock(true);
-    setTimeout(() => setSyncLock(false), 5000); // 5s lock to let Sheets finish
+    setTimeout(() => setSyncLock(false), 5000); 
   };
 
   const handleSaveEquipment = async (newItem: Equipment) => {
     const oldItems = [...items];
+    // Optimistic UI update: change the local state immediately
     setItems(editingItem ? items.map(i => i.id === newItem.id ? newItem : i) : [newItem, ...items]);
     lockSync();
     try {
@@ -330,7 +317,6 @@ const AppContent: React.FC = () => {
       setIsAddingEquipment(false);
       setEditingItem(null);
       if (!editingItem) setViewingQRItem(newItem);
-      // No immediate loadData(true) to prevent image reversion
     } catch (e) {
       setItems(oldItems);
       showAlert('error', 'Cloud Push Failed', 'Changes failed to sync to Google Sheet.');
