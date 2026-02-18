@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { Equipment, EquipmentStatus, AuditLog } from './types';
 import { storageService } from './services/storageService';
 import Scanner from './components/Scanner';
@@ -162,7 +162,7 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
               </div>
             )}
           </div>
-          <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tighter uppercase leading-none">ASSETS LIST</h1>
+          <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tighter uppercase leading-none">Fleet</h1>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <button onClick={onRefresh} className={`p-5 glass text-slate-400 hover:text-white rounded-2xl transition-all shadow-xl ${isSyncing ? 'animate-spin' : ''}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
@@ -251,28 +251,65 @@ const ScanPage: React.FC<{ onScan: (id: string) => void }> = ({ onScan }) => (
 );
 
 // --- QR Modal Component ---
-const QRCodeModal: React.FC<{ item: Equipment; onClose: () => void }> = ({ item, onClose }) => (
-  <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/90 backdrop-blur-2xl p-4 animate-in fade-in duration-300 overflow-hidden">
-    <div className="glass rounded-[3rem] shadow-2xl w-full max-w-sm overflow-hidden transform animate-in zoom-in slide-in-from-bottom-10 duration-500 border-white/5">
-      <div className="p-10 flex flex-col items-center text-center space-y-10">
-        <div className="space-y-2">
-          <p className="text-[11px] font-bold text-orange-500 uppercase tracking-[0.4em]">{item.category}</p>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tighter uppercase leading-none">{item.name}</h2>
-        </div>
-        <div className="p-8 bg-white rounded-[2.5rem] shadow-[0_0_50px_rgba(255,255,255,0.1)] flex items-center justify-center w-full aspect-square">
-          <QRCodeSVG value={item.id} size={220} level="H" includeMargin={false} className="w-full h-auto" />
-        </div>
-        <div className="space-y-4 w-full">
-          <div className="bg-white/5 px-6 py-4 rounded-2xl flex items-center justify-between border border-white/5">
-             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">ASSET_UID</span>
-             <span className="text-sm font-mono font-bold text-white truncate ml-4">{item.id}</span>
+const QRCodeModal: React.FC<{ item: Equipment; onClose: () => void }> = ({ item, onClose }) => {
+  const handleDownload = () => {
+    const canvas = document.getElementById('qr-download-canvas') as HTMLCanvasElement;
+    if (canvas) {
+      const pngUrl = canvas
+        .toDataURL("image/png")
+        .replace("image/png", "image/octet-stream");
+      let downloadLink = document.createElement("a");
+      downloadLink.href = pngUrl;
+      // Unique meaningful name: QR_[EquipmentName]_[ID].png
+      const safeName = item.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      downloadLink.download = `QR_${safeName}_${item.id}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/90 backdrop-blur-2xl p-4 animate-in fade-in duration-300 overflow-hidden">
+      <div className="glass rounded-[3rem] shadow-2xl w-full max-w-sm overflow-hidden transform animate-in zoom-in slide-in-from-bottom-10 duration-500 border-white/5">
+        <div className="p-10 flex flex-col items-center text-center space-y-10">
+          <div className="space-y-2">
+            <p className="text-[11px] font-bold text-orange-500 uppercase tracking-[0.4em]">{item.category}</p>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-white tracking-tighter uppercase leading-none">{item.name}</h2>
           </div>
-          <button onClick={onClose} className="w-full py-5 bg-white hover:bg-slate-200 text-slate-950 rounded-2xl font-extrabold text-[11px] uppercase tracking-widest transition-all shadow-xl"> CLOSE </button>
+          <div className="p-8 bg-white rounded-[2.5rem] shadow-[0_0_50px_rgba(255,255,255,0.1)] flex items-center justify-center w-full aspect-square">
+            <QRCodeSVG value={item.id} size={220} level="H" includeMargin={false} className="w-full h-auto" />
+            {/* Hidden canvas for high-quality generation */}
+            <div className="hidden">
+              <QRCodeCanvas 
+                id="qr-download-canvas" 
+                value={item.id} 
+                size={1024} 
+                level="H" 
+                includeMargin={true} 
+              />
+            </div>
+          </div>
+          <div className="space-y-4 w-full">
+            <div className="bg-white/5 px-6 py-4 rounded-2xl flex items-center justify-between border border-white/5">
+               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">ASSET_UID</span>
+               <span className="text-sm font-mono font-bold text-white truncate ml-4">{item.id}</span>
+            </div>
+            <div className="grid grid-cols-1 gap-3 w-full">
+              <button onClick={handleDownload} className="w-full py-5 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-extrabold text-[11px] uppercase tracking-widest transition-all shadow-xl shadow-orange-950/20 flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                DOWNLOAD_FOR_PRINT
+              </button>
+              <button onClick={onClose} className="w-full py-5 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-extrabold text-[11px] uppercase tracking-widest transition-all border border-white/10"> CLOSE </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // --- Main App Component ---
 const AppContent: React.FC = () => {
