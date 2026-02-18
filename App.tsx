@@ -86,12 +86,99 @@ const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => 
   );
 };
 
-// --- Main App ---
+// --- Sub-components (Missing parts) ---
+
+const ScanPage: React.FC<{ onScan: (id: string) => void }> = ({ onScan }) => {
+  return (
+    <div className="flex flex-col items-center justify-center space-y-8 py-10 animate-in fade-in duration-700">
+      <div className="text-center space-y-2">
+        <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase">Optical Sync</h2>
+        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Position Barcode / QR Code within frame</p>
+      </div>
+      <Scanner onScanSuccess={onScan} isActive={true} />
+      <Link to="/" className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-colors flex items-center gap-2">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+        Return to Dashboard
+      </Link>
+    </div>
+  );
+};
+
+const QRCodeModal: React.FC<{ item: Equipment; onClose: () => void }> = ({ item, onClose }) => {
+  const downloadQR = () => {
+    const svg = document.getElementById('qr-svg');
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const svgSize = svg.getBoundingClientRect();
+    canvas.width = svgSize.width * 2;
+    canvas.height = svgSize.height * 2;
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.onload = () => {
+      if (ctx) {
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const pngFile = canvas.toDataURL("image/png");
+        const downloadLink = document.createElement("a");
+        downloadLink.download = `QR-${item.id}.png`;
+        downloadLink.href = pngFile;
+        downloadLink.click();
+      }
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(svgData);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xl p-4 animate-in fade-in duration-300">
+      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-sm overflow-hidden transform animate-in zoom-in duration-500">
+        <div className="p-8 flex flex-col items-center text-center space-y-6">
+          <div className="w-full flex justify-between items-center mb-2">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Asset Identifier</span>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-900 transition-colors">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          
+          <div className="bg-slate-50 p-8 rounded-[2rem] shadow-inner border border-slate-100">
+            <QRCodeSVG 
+              id="qr-svg"
+              value={item.id} 
+              size={200} 
+              level="H"
+              includeMargin={false}
+              className="mx-auto"
+            />
+          </div>
+          
+          <div className="space-y-1">
+            <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{item.name}</h3>
+            <p className="text-blue-600 font-mono font-black text-sm uppercase tracking-widest">{item.id}</p>
+          </div>
+
+          <div className="w-full flex gap-3 pt-4">
+            <button 
+              onClick={downloadQR}
+              className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Download PNG
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- App Container for Router Hooks ---
 const AppContent: React.FC = () => {
   const [items, setItems] = useState<Equipment[]>(() => JSON.parse(localStorage.getItem('equiptrack_data') || '[]'));
   const [logs, setLogs] = useState<AuditLog[]>(() => JSON.parse(localStorage.getItem('equiptrack_logs') || '[]'));
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('Never');
   const [cloudStatus, setCloudStatus] = useState<'connected' | 'offline' | 'error'>('offline');
   const [selectedItem, setSelectedItem] = useState<Equipment | null>(null);
   const [isAddingEquipment, setIsAddingEquipment] = useState(false);
@@ -128,6 +215,7 @@ const AppContent: React.FC = () => {
       
       setItems(fetchedItems);
       setLogs(fetchedLogs);
+      setLastSyncTime(new Date().toLocaleTimeString());
       
       if (webhookUrl) {
         setCloudStatus(fetchedItems.length > 0 ? 'connected' : 'error');
@@ -144,7 +232,7 @@ const AppContent: React.FC = () => {
   };
 
   useEffect(() => {
-    loadData(true); // Load in background on mount
+    loadData(true); 
     const savedRole = localStorage.getItem('equiptrack_role') as UserRole;
     if (savedRole) setRole(savedRole);
   }, []);
@@ -170,9 +258,7 @@ const AppContent: React.FC = () => {
     }
   };
 
-  // --- Optimistic Update Logic ---
   const handleSaveEquipment = async (newItem: Equipment) => {
-    // 1. Optimistic UI update
     const oldItems = [...items];
     if (editingItem) {
       setItems(items.map(i => i.id === newItem.id ? newItem : i));
@@ -189,11 +275,11 @@ const AppContent: React.FC = () => {
       setIsAddingEquipment(false);
       setEditingItem(null);
       if (!editingItem) setViewingQRItem(newItem);
-      // Background sync to verify
-      loadData(true);
+      await loadData(true);
     } catch (e) {
-      setItems(oldItems); // Rollback
+      setItems(oldItems);
       showAlert('error', 'Cloud Push Failed', 'Changes saved locally but failed to sync to Google Sheet.');
+      throw e; 
     }
   };
 
@@ -203,7 +289,7 @@ const AppContent: React.FC = () => {
       setItems(items.filter(i => i.id !== item.id));
       try {
         await storageService.deleteItem(item.id);
-        loadData(true);
+        await loadData(true);
       } catch (e) {
         setItems(oldItems);
         showAlert('error', 'Deletion Failed', 'Cloud record could not be removed.');
@@ -216,7 +302,6 @@ const AppContent: React.FC = () => {
     const oldItems = [...items];
     const oldLogs = [...logs];
     
-    // 1. Optimistic State
     const tempLog: AuditLog = {
       id: 'temp-' + Date.now(),
       equipmentId: updatedItem.id,
@@ -230,7 +315,6 @@ const AppContent: React.FC = () => {
     
     setItems(items.map(i => i.id === updatedItem.id ? updatedItem : i));
     setLogs([tempLog, ...logs]);
-    setSelectedItem(null);
 
     try {
       await storageService.updateItem(updatedItem);
@@ -242,11 +326,13 @@ const AppContent: React.FC = () => {
         projectName,
         notes
       });
-      loadData(true); // Final verification
+      setSelectedItem(null);
+      await loadData(true);
     } catch (e) {
       setItems(oldItems);
       setLogs(oldLogs);
       showAlert('error', 'Transmission Failed', 'Check your connection. Changes rolled back.');
+      throw e;
     }
   };
 
@@ -262,7 +348,9 @@ const AppContent: React.FC = () => {
               <span className="text-xl font-black text-slate-900 tracking-tighter uppercase">EquipTrack</span>
               <div className="flex items-center gap-2 mt-0.5">
                 <div className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-blue-500 animate-ping' : cloudStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                <div className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase">{isSyncing ? 'SYNCING...' : cloudStatus === 'connected' ? 'CLOUD READY' : 'OFFLINE'}</div>
+                <div className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase">
+                  {isSyncing ? 'SYNCING...' : cloudStatus === 'connected' ? `SYNCED ${lastSyncTime}` : 'OFFLINE'}
+                </div>
               </div>
             </div>
           </Link>
@@ -283,7 +371,7 @@ const AppContent: React.FC = () => {
         {isLoading && items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-40 animate-pulse">
             <div className="w-12 h-12 border-4 border-slate-100 border-t-blue-500 rounded-full animate-spin mb-4"></div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hydrating Cache...</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Warming Up...</p>
           </div>
         ) : (
           <Routes>
@@ -318,6 +406,7 @@ const AppContent: React.FC = () => {
   );
 };
 
+// --- Dashboard Page component ---
 const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipment, onEditEquipment, onDeleteEquipment, onViewQR, role, onRefresh, isSyncing }) => {
   const isAdmin = role === 'admin';
   const stats = useMemo(() => ({ total: items.length, available: items.filter((i:any) => i.status === EquipmentStatus.AVAILABLE).length, inUse: items.filter((i:any) => i.status === EquipmentStatus.IN_USE).length, maintenance: items.filter((i:any) => i.status === EquipmentStatus.MAINTENANCE).length }), [items]);
@@ -328,10 +417,15 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
         <div className="space-y-2">
           <div className="flex items-center gap-3">
              <span className="px-3 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg">{role} terminal</span>
-             {isSyncing && <span className="text-[10px] font-black text-blue-600 animate-pulse tracking-widest uppercase">Fetching Cloud...</span>}
+             {isSyncing && (
+               <div className="flex items-center gap-2">
+                 <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                 <span className="text-[10px] font-black text-blue-600 tracking-widest uppercase">Cloud Push...</span>
+               </div>
+             )}
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter uppercase leading-none">Inventory</h1>
-          <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Matrix Production Pipeline</p>
+          <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">Active Matrix Production Gear</p>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <button onClick={onRefresh} className={`p-4 bg-white border-2 border-slate-100 text-slate-400 hover:text-blue-600 rounded-2xl transition-all shadow-sm ${isSyncing ? 'animate-spin' : ''}`}><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
@@ -350,14 +444,14 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
           <div className="flex items-center justify-between px-1">
             <h2 className="font-black text-2xl text-slate-900 tracking-tighter uppercase">Asset Matrix</h2>
             <div className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest bg-slate-100 text-slate-400`}>
-              {items.length} Registered Units
+              {items.length} Tracking Units
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {items.length === 0 ? (
               <div className="md:col-span-2 py-32 bg-white rounded-[3rem] border border-slate-100 flex flex-col items-center justify-center text-center p-8">
-                 <p className="text-lg font-black text-slate-900 uppercase tracking-widest">No Matrix Data</p>
-                 <button onClick={onRefresh} className="mt-4 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Sync Now</button>
+                 <p className="text-lg font-black text-slate-900 uppercase tracking-widest">Database Clean</p>
+                 <button onClick={onRefresh} className="mt-4 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Connect Matrix</button>
               </div>
             ) : items.map((item:any) => <EquipmentCard key={item.id} item={item} onSelect={onSelectItem} onViewQR={onViewQR} onEdit={onEditEquipment} onDelete={onDeleteEquipment} isAdmin={isAdmin} />)}
           </div>
@@ -384,54 +478,12 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
   );
 };
 
-const ScanPage: React.FC<any> = ({ onScan }) => (
-  <div className="flex flex-col items-center justify-center min-h-[80vh] space-y-8 animate-in fade-in duration-700 px-4">
-    <div className="text-center max-w-lg space-y-2">
-      <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none">Smart Lens</h1>
-      <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Real-time Asset Identification</p>
-    </div>
-    <div className="w-full max-w-sm"><Scanner onScanSuccess={onScan} isActive={true} /></div>
-    <Link to="/" className="text-slate-400 hover:text-slate-900 flex items-center gap-3 transition-colors font-black text-[10px] uppercase tracking-[0.2em] bg-white px-6 py-4 rounded-2xl shadow-sm border border-slate-100">Exit Scanner</Link>
-  </div>
-);
-
-const App: React.FC = () => (
-  <HashRouter>
-    <AppContent />
-  </HashRouter>
-);
-
-const QRCodeModal: React.FC<{ item: Equipment; onClose: () => void }> = ({ item, onClose }) => {
+// --- Export the main App entry point ---
+const App: React.FC = () => {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-2xl p-4 animate-in fade-in duration-300">
-      <div className="bg-white rounded-[3rem] shadow-2xl w-full max-sm:max-w-xs w-full max-w-sm overflow-hidden transform animate-in zoom-in duration-300">
-        <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-          <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Label</h2>
-          <button onClick={onClose} className="w-12 h-12 flex items-center justify-center bg-slate-100 rounded-2xl text-slate-500 hover:text-slate-900 transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div className="p-10 flex flex-col items-center">
-          <div className="bg-white p-6 rounded-[2rem] shadow-2xl border border-slate-50 mb-8 flex items-center justify-center">
-            <QRCodeSVG value={item.id} size={220} level="H" includeMargin={true} />
-          </div>
-          <div className="text-center space-y-2">
-            <p className="text-[10px] text-blue-600 font-black uppercase tracking-[0.3em]">{item.category}</p>
-            <p className="font-black text-2xl text-slate-900 tracking-tighter uppercase">{item.name}</p>
-            <p className="text-slate-400 font-mono font-bold text-sm tracking-[0.3em]">{item.id}</p>
-          </div>
-          <button 
-            onClick={() => window.print()}
-            className="mt-10 w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 active:scale-95 transition-transform shadow-2xl shadow-slate-200"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-            Print Tag
-          </button>
-        </div>
-      </div>
-    </div>
+    <HashRouter>
+      <AppContent />
+    </HashRouter>
   );
 };
 

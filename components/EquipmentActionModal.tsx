@@ -5,19 +5,21 @@ import { Equipment, EquipmentStatus } from '../types';
 interface EquipmentActionModalProps {
   item: Equipment;
   onClose: () => void;
-  onAction: (updatedItem: Equipment, userName: string, projectName?: string, notes?: string) => void;
+  onAction: (updatedItem: Equipment, userName: string, projectName?: string, notes?: string) => Promise<void>;
 }
 
 const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClose, onAction }) => {
   const [userName, setUserName] = useState(item.currentHolder || '');
   const [projectName, setProjectName] = useState(item.projectName || '');
   const [notes, setNotes] = useState('');
+  const [isTransmitting, setIsTransmitting] = useState(false);
   const isCheckOut = item.status === EquipmentStatus.AVAILABLE;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userName.trim()) return;
+    if (!userName.trim() || isTransmitting) return;
 
+    setIsTransmitting(true);
     const updatedItem: Equipment = {
       ...item,
       status: isCheckOut ? EquipmentStatus.IN_USE : EquipmentStatus.AVAILABLE,
@@ -25,7 +27,11 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
       projectName: isCheckOut ? projectName : undefined,
     };
 
-    onAction(updatedItem, userName, isCheckOut ? projectName : undefined, notes);
+    try {
+      await onAction(updatedItem, userName, isCheckOut ? projectName : undefined, notes);
+    } catch (e) {
+      setIsTransmitting(false);
+    }
   };
 
   return (
@@ -42,7 +48,7 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
             </div>
           )}
           <div className="absolute top-6 right-6">
-            <button onClick={onClose} className="w-10 h-10 flex items-center justify-center bg-white/20 backdrop-blur-xl rounded-2xl text-white hover:bg-white hover:text-slate-900 transition-all border border-white/30">
+            <button onClick={onClose} disabled={isTransmitting} className="w-10 h-10 flex items-center justify-center bg-white/20 backdrop-blur-xl rounded-2xl text-white hover:bg-white hover:text-slate-900 transition-all border border-white/30 disabled:opacity-50">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -56,65 +62,76 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
 
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
           <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Asset Status</div>
+            <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Action Request</div>
             <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${
               isCheckOut ? 'bg-green-50 text-green-600 border-green-100' : 'bg-blue-50 text-blue-600 border-blue-100'
             }`}>
-              {isCheckOut ? 'Available for Checkout' : 'Current Usage'}
+              {isCheckOut ? 'Assign Personnel' : 'Return to Base'}
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-                {isCheckOut ? 'Assign To (Personnel)' : 'Confirmed By'}
+                {isCheckOut ? 'Operator Name' : 'Check-in Confirmed By'}
               </label>
               <input
                 type="text"
                 required
+                disabled={isTransmitting}
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
-                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all font-bold text-slate-900"
-                placeholder="e.g. John Wick"
+                className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all font-bold text-slate-900 disabled:opacity-50"
+                placeholder="Name of user"
               />
             </div>
 
             {isCheckOut && (
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-                  Project Title
+                  Active Project
                 </label>
                 <input
                   type="text"
                   required
+                  disabled={isTransmitting}
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all font-bold text-slate-900"
-                  placeholder="e.g. Summer Campaign 2024"
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all font-bold text-slate-900 disabled:opacity-50"
+                  placeholder="e.g. Production 01"
                 />
               </div>
             )}
 
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-                Action Notes
+                Deployment Notes
               </label>
               <textarea
+                disabled={isTransmitting}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all h-24 resize-none font-medium text-slate-600 text-sm"
-                placeholder="Details on condition or location..."
+                className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all h-20 resize-none font-medium text-slate-600 text-sm disabled:opacity-50"
+                placeholder="Status notes..."
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-2xl transition-all active:scale-95 ${
-              isCheckOut ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' : 'bg-slate-900 hover:bg-slate-800 shadow-slate-200'
+            disabled={isTransmitting}
+            className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 ${
+              isTransmitting ? 'bg-slate-400' : isCheckOut ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' : 'bg-slate-900 hover:bg-slate-800 shadow-slate-200'
             }`}
           >
-            Confirm {isCheckOut ? 'Check Out' : 'Asset Return'}
+            {isTransmitting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                Transmitting...
+              </>
+            ) : (
+              `Confirm ${isCheckOut ? 'Check Out' : 'Check In'}`
+            )}
           </button>
         </form>
       </div>
