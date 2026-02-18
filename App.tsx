@@ -53,7 +53,12 @@ const StatCard: React.FC<{ label: string; value: number; color: string; icon: Re
 );
 
 const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => void; onViewQR: (item: Equipment) => void; onEdit: (item: Equipment) => void; onDelete: (item: Equipment) => void; isAdmin: boolean; }> = ({ item, onSelect, onViewQR, onEdit, onDelete, isAdmin }) => {
-  const statusColors = { [EquipmentStatus.AVAILABLE]: 'bg-green-100 text-green-700', [EquipmentStatus.IN_USE]: 'bg-blue-100 text-blue-700', [EquipmentStatus.MAINTENANCE]: 'bg-orange-100 text-orange-700', [EquipmentStatus.LOST]: 'bg-red-100 text-red-700' };
+  const statusColors = { 
+    [EquipmentStatus.AVAILABLE]: 'bg-green-100 text-green-700', 
+    [EquipmentStatus.IN_USE]: 'bg-orange-100 text-orange-700', 
+    [EquipmentStatus.MAINTENANCE]: 'bg-slate-100 text-slate-700', 
+    [EquipmentStatus.LOST]: 'bg-red-100 text-red-700' 
+  };
   return (
     <div className="bg-white p-5 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col gap-5 active:bg-slate-50 transition-all hover:shadow-xl hover:-translate-y-1" onClick={() => onSelect(item)}>
       <div className="flex items-center gap-4">
@@ -62,7 +67,9 @@ const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => 
         </div>
         <div className="flex-1 overflow-hidden">
           <div className="flex items-center justify-between gap-2">
-            <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${statusColors[item.status]}`}>{item.status.replace('_', ' ')}</span>
+            <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${statusColors[item.status]}`}>
+              {item.status === EquipmentStatus.IN_USE ? 'OUT ON SITE' : item.status.replace('_', ' ')}
+            </span>
             <div className="flex gap-1">
               <button onClick={(e) => { e.stopPropagation(); onViewQR(item); }} className="p-2 text-slate-400 hover:text-blue-600 bg-slate-50 rounded-xl transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg></button>
               {isAdmin && (
@@ -79,9 +86,9 @@ const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => 
       </div>
       <div className="flex items-center justify-between text-[10px] pt-4 border-t border-slate-50 font-black tracking-widest uppercase">
         <div className="text-slate-400">{item.category}</div>
-        <div className="text-right">{item.currentHolder ? <div className="text-blue-600 truncate max-w-[100px]">{item.currentHolder}</div> : <div className="text-slate-200">Free</div>}</div>
+        <div className="text-right">{item.currentHolder ? <div className="text-orange-600 truncate max-w-[100px]">{item.currentHolder}</div> : <div className="text-slate-200">STORAGE BASE</div>}</div>
       </div>
-      {item.projectName && <div className="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest self-start shadow-lg shadow-blue-100">@{item.projectName}</div>}
+      {item.projectName && <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest self-start shadow-lg shadow-slate-100">@{item.projectName}</div>}
     </div>
   );
 };
@@ -134,22 +141,22 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
         <div className="flex gap-3 w-full md:w-auto">
           <button onClick={onRefresh} className={`p-4 bg-white border-2 border-slate-100 text-slate-400 hover:text-blue-600 rounded-2xl transition-all shadow-sm ${isSyncing ? 'animate-spin' : ''}`}><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
           {isAdmin && <button onClick={onAddEquipment} className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-100 font-black py-4 px-8 rounded-2xl transition-all active:scale-95 text-[10px] uppercase tracking-widest shadow-sm"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>Register</button>}
-          <Link to="/scan" className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-black py-4 px-8 rounded-2xl shadow-xl shadow-blue-200 transition-all active:scale-95 text-[10px] uppercase tracking-widest"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg>Fast Scan</Link>
+          <Link to="/scan" className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 bg-orange-600 hover:orange-blue-700 text-white font-black py-4 px-8 rounded-2xl shadow-xl shadow-orange-200 transition-all active:scale-95 text-[10px] uppercase tracking-widest"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg>Fast Scan</Link>
         </div>
       </header>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total" value={stats.total} color="bg-slate-100 text-slate-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>} />
-        <StatCard label="Ready" value={stats.available} color="bg-green-50 text-green-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
-        <StatCard label="Active" value={stats.inUse} color="bg-blue-50 text-blue-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>} />
-        <StatCard label="Down" value={stats.maintenance} color="bg-orange-50 text-orange-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>} />
+        <StatCard label="Total Units" value={stats.total} color="bg-slate-100 text-slate-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>} />
+        <StatCard label="In Storage" value={stats.available} color="bg-green-50 text-green-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
+        <StatCard label="Out on Site" value={stats.inUse} color="bg-orange-50 text-orange-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>} />
+        <StatCard label="Maintenance" value={stats.maintenance} color="bg-slate-50 text-slate-600" icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>} />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 pb-24 md:pb-12">
         <div className="xl:col-span-2 space-y-12">
           {categories.length === 0 ? (
             <div className="py-32 bg-white rounded-[3rem] border border-slate-100 flex flex-col items-center justify-center text-center p-8">
-               <p className="text-lg font-black text-slate-900 uppercase tracking-widest">Empty Matrix</p>
+               <p className="text-lg font-black text-slate-900 uppercase tracking-widest">Database Clean</p>
                <button onClick={onRefresh} className="mt-4 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Pull From Cloud</button>
             </div>
           ) : categories.map(cat => (
@@ -170,16 +177,20 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
         
         <div className="bg-white rounded-[3rem] shadow-sm border border-slate-100 flex flex-col h-[600px] md:h-[800px] sticky top-28">
           <div className="p-8 border-b border-slate-50 flex justify-between items-center">
-            <h2 className="font-black text-2xl text-slate-900 tracking-tighter uppercase">Audit</h2>
-            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+            <h2 className="font-black text-2xl text-slate-900 tracking-tighter uppercase">Audit Stream</h2>
+            <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
           </div>
           <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar">
             {logs.length === 0 ? <div className="text-center py-32 text-slate-300 font-black text-[10px] uppercase tracking-widest">No Logs</div> : logs.map((log: any) => (
               <div key={log.id} className="flex gap-5 group">
-                <div className={`mt-1 flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md ${log.action === 'CHECK_OUT' ? 'bg-blue-600 text-white' : 'bg-slate-900 text-white'}`}>{log.action === 'CHECK_OUT' ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg> : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M11 16l-4-4m0 0l4-4m-4 4h14" /></svg>}</div>
+                <div className={`mt-1 flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md ${log.action === 'CHECK_OUT' ? 'bg-orange-600 text-white' : 'bg-slate-900 text-white'}`}>{log.action === 'CHECK_OUT' ? <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M17 16l4-4m0 0l-4-4m4 4H7" /></svg> : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M11 16l-4-4m0 0l4-4m-4 4h14" /></svg>}</div>
                 <div className="flex-1 overflow-hidden">
-                  <p className="text-[13px] leading-tight mb-1"><span className="font-black text-slate-900 uppercase">{log.userName}</span><span className="text-slate-400 font-bold"> {log.action === 'CHECK_OUT' ? 'deployed' : 'restored'} </span><span className="font-black text-blue-600 truncate">{log.equipmentName}</span></p>
-                  <p className="text-[9px] text-slate-300 uppercase font-black tracking-widest">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(log.timestamp).toLocaleDateString()}</p>
+                  <p className="text-[13px] leading-tight mb-1">
+                    <span className="font-black text-slate-900 uppercase">{log.userName}</span>
+                    <span className="text-slate-400 font-bold"> {log.action === 'CHECK_OUT' ? 'deployed' : 'returned'} </span>
+                    <span className="font-black text-slate-900 truncate">{log.equipmentName}</span>
+                  </p>
+                  <p className="text-[9px] text-slate-300 uppercase font-black tracking-widest">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {log.projectName ? `@${log.projectName}` : 'BASE'}</p>
                 </div>
               </div>
             ))}
@@ -262,11 +273,7 @@ const AppContent: React.FC = () => {
   const navigate = useNavigate();
 
   const loadData = async (background = false) => {
-    // FIX: Lock background refreshes during update window to prevent "image reverting" bug
-    if (syncLock) {
-      console.log("Background sync locked during cloud processing window...");
-      return; 
-    }
+    if (syncLock) return; 
     
     if (!background) setIsLoading(true);
     setIsSyncing(true);
@@ -305,7 +312,6 @@ const AppContent: React.FC = () => {
     else { showAlert('error', 'Asset Not Found', `ID ${id} is missing from local cache.`); }
   };
 
-  // FIX: Lock background refreshes for 10 seconds after a save to let Google Sheets finish
   const lockSync = () => {
     setSyncLock(true);
     setTimeout(() => setSyncLock(false), 10000); 
@@ -313,7 +319,6 @@ const AppContent: React.FC = () => {
 
   const handleSaveEquipment = async (newItem: Equipment) => {
     const oldItems = [...items];
-    // Optimistic UI update: change the local state immediately
     setItems(prevItems => {
         const index = prevItems.findIndex(i => i.id === newItem.id);
         if (index > -1) {
@@ -381,15 +386,15 @@ const AppContent: React.FC = () => {
             <div className="leading-none">
               <span className="text-xl font-black text-slate-900 tracking-tighter uppercase">EquipTrack</span>
               <div className="flex items-center gap-2 mt-0.5">
-                <div className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-blue-500 animate-ping' : cloudStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div className={`w-1.5 h-1.5 rounded-full ${isSyncing ? 'bg-orange-500 animate-ping' : cloudStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'}`}></div>
                 <div className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase">{isSyncing ? 'SYNCING...' : cloudStatus === 'connected' ? `READY ${lastSyncTime}` : 'OFFLINE'}</div>
               </div>
             </div>
           </Link>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-6">
-              <Link to="/" className={`text-[10px] font-black tracking-widest transition-colors ${location.pathname === '/' ? 'text-blue-600' : 'text-slate-400'}`}>DASHBOARD</Link>
-              <Link to="/scan" className={`text-[10px] font-black tracking-widest transition-colors ${location.pathname === '/scan' ? 'text-blue-600' : 'text-slate-400'}`}>SCAN</Link>
+              <Link to="/" className={`text-[10px] font-black tracking-widest transition-colors ${location.pathname === '/' ? 'text-orange-600' : 'text-slate-400'}`}>DASHBOARD</Link>
+              <Link to="/scan" className={`text-[10px] font-black tracking-widest transition-colors ${location.pathname === '/scan' ? 'text-orange-600' : 'text-slate-400'}`}>SCAN</Link>
               <button onClick={() => setShowSettings(true)} className="p-2 text-slate-400 hover:text-slate-900 transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
             </div>
             <button onClick={handleLogout} className="text-[9px] font-black text-slate-900 tracking-widest uppercase bg-slate-50 px-4 py-2 rounded-full border border-slate-100">Exit</button>
@@ -399,7 +404,7 @@ const AppContent: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-6">
         {isLoading && items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-40 animate-pulse"><div className="w-12 h-12 border-4 border-slate-100 border-t-blue-500 rounded-full animate-spin mb-4"></div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Warming Up...</p></div>
+          <div className="flex flex-col items-center justify-center py-40 animate-pulse"><div className="w-12 h-12 border-4 border-slate-100 border-t-orange-500 rounded-full animate-spin mb-4"></div><p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Warming Up...</p></div>
         ) : (
           <Routes>
             <Route path="/" element={<DashboardPage items={items} logs={logs} onSelectItem={setSelectedItem} onAddEquipment={() => setIsAddingEquipment(true)} onEditEquipment={setEditingItem} onDeleteEquipment={handleDeleteItem} onViewQR={setViewingQRItem} role={role} onRefresh={() => { setSyncLock(false); loadData(); }} isSyncing={isSyncing} />} />
@@ -410,8 +415,8 @@ const AppContent: React.FC = () => {
 
       <div className="md:hidden fixed bottom-10 left-8 right-8 z-50">
         <div className="bg-slate-900/95 backdrop-blur-2xl border border-white/10 p-2.5 rounded-[2.5rem] shadow-2xl flex justify-around items-center">
-          <Link to="/" className={`p-5 rounded-[1.75rem] transition-all ${location.pathname === '/' ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/40' : 'text-slate-500'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg></Link>
-          <Link to="/scan" className="relative -mt-14 bg-white p-6 rounded-full shadow-2xl shadow-blue-400 border-[6px] border-slate-900 active:scale-90 transition-transform"><svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg></Link>
+          <Link to="/" className={`p-5 rounded-[1.75rem] transition-all ${location.pathname === '/' ? 'bg-orange-600 text-white shadow-xl shadow-orange-500/40' : 'text-slate-500'}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg></Link>
+          <Link to="/scan" className="relative -mt-14 bg-white p-6 rounded-full shadow-2xl shadow-orange-400 border-[6px] border-slate-900 active:scale-90 transition-transform"><svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01" /></svg></Link>
           <button onClick={() => setShowSettings(true)} className="p-5 rounded-[1.75rem] transition-all text-slate-500"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg></button>
         </div>
       </div>

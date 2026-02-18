@@ -13,7 +13,7 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
   const [projectName, setProjectName] = useState(item.projectName || '');
   const [notes, setNotes] = useState('');
   const [isTransmitting, setIsTransmitting] = useState(false);
-  const isCheckOut = item.status === EquipmentStatus.AVAILABLE;
+  const isDeploying = item.status === EquipmentStatus.AVAILABLE;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,13 +22,13 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
     setIsTransmitting(true);
     const updatedItem: Equipment = {
       ...item,
-      status: isCheckOut ? EquipmentStatus.IN_USE : EquipmentStatus.AVAILABLE,
-      currentHolder: isCheckOut ? userName : undefined,
-      projectName: isCheckOut ? projectName : undefined,
+      status: isDeploying ? EquipmentStatus.IN_USE : EquipmentStatus.AVAILABLE,
+      currentHolder: isDeploying ? userName : undefined,
+      projectName: isDeploying ? projectName : undefined,
     };
 
     try {
-      await onAction(updatedItem, userName, isCheckOut ? projectName : undefined, notes);
+      await onAction(updatedItem, userName, isDeploying ? projectName : undefined, notes);
     } catch (e) {
       setIsTransmitting(false);
     }
@@ -62,18 +62,18 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
 
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
           <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Action Request</div>
+            <div className="text-xs font-black text-slate-400 uppercase tracking-widest">Operation Status</div>
             <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${
-              isCheckOut ? 'bg-green-50 text-green-600 border-green-100' : 'bg-blue-50 text-blue-600 border-blue-100'
+              isDeploying ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-green-50 text-green-600 border-green-100'
             }`}>
-              {isCheckOut ? 'Assign Personnel' : 'Return to Base'}
+              {isDeploying ? 'READY TO DEPLOY' : 'OUT ON SITE'}
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-                {isCheckOut ? 'Operator Name' : 'Check-in Confirmed By'}
+                {isDeploying ? 'ASSIGN TO OPERATOR' : 'RETURNED BY'}
               </label>
               <input
                 type="text"
@@ -82,14 +82,14 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
                 className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all font-bold text-slate-900 disabled:opacity-50"
-                placeholder="Name of user"
+                placeholder="Staff name..."
               />
             </div>
 
-            {isCheckOut && (
+            {isDeploying && (
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-                  Active Project
+                  WORK LOCATION / PROJECT
                 </label>
                 <input
                   type="text"
@@ -98,21 +98,21 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                   className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all font-bold text-slate-900 disabled:opacity-50"
-                  placeholder="e.g. Production 01"
+                  placeholder="Site ID or Project Name"
                 />
               </div>
             )}
 
             <div>
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">
-                Deployment Notes
+                REMARKS / NOTES
               </label>
               <textarea
                 disabled={isTransmitting}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="w-full px-5 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white outline-none transition-all h-20 resize-none font-medium text-slate-600 text-sm disabled:opacity-50"
-                placeholder="Status notes..."
+                placeholder="Physical condition or notes..."
               />
             </div>
           </div>
@@ -120,17 +120,17 @@ const EquipmentActionModal: React.FC<EquipmentActionModalProps> = ({ item, onClo
           <button
             type="submit"
             disabled={isTransmitting}
-            className={`w-full py-5 rounded-2xl font-black text-xs uppercase tracking-widest text-white shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 ${
-              isTransmitting ? 'bg-slate-400' : isCheckOut ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-200' : 'bg-slate-900 hover:bg-slate-800 shadow-slate-200'
+            className={`w-full py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-white shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-3 ${
+              isTransmitting ? 'bg-slate-400' : isDeploying ? 'bg-orange-600 hover:bg-orange-700 shadow-orange-100' : 'bg-slate-900 hover:bg-slate-800 shadow-slate-200'
             }`}
           >
             {isTransmitting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                Transmitting...
+                SYNCING LOGISTICS...
               </>
             ) : (
-              `Confirm ${isCheckOut ? 'Check Out' : 'Check In'}`
+              isDeploying ? 'พร้อมใช้งาน' : 'รอนำส่งคืน'
             )}
           </button>
         </form>
