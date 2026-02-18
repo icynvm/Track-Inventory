@@ -12,15 +12,15 @@ import CustomAlert, { AlertType } from './components/CustomAlert';
 
 type UserRole = 'admin' | 'user';
 
+const LOGO_URL = 'https://img2.pic.in.th/7289a7bc-643b-4c94-96a8-9a8826277950.png';
+
 // --- Login Screen ---
 const LoginPage: React.FC<{ onLogin: (role: UserRole) => void }> = ({ onLogin }) => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
     <div className="w-full max-w-md space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
       <div className="text-center space-y-4">
-        <div className="mx-auto w-20 h-20 bg-slate-900 p-5 rounded-[2rem] shadow-2xl flex items-center justify-center text-white">
-          <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
-          </svg>
+        <div className="mx-auto w-24 h-24 bg-white p-2 rounded-[2rem] shadow-2xl flex items-center justify-center overflow-hidden border border-slate-100">
+          <img src={LOGO_URL} alt="Logo" className="w-full h-full object-contain" />
         </div>
         <div className="space-y-1">
           <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase">EquipTrack<span className="text-blue-600">Pro</span></h1>
@@ -88,10 +88,9 @@ const EquipmentCard: React.FC<{ item: Equipment; onSelect: (item: Equipment) => 
 
 // --- Dashboard Component ---
 const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipment, onEditEquipment, onDeleteEquipment, onViewQR, role, onRefresh, isSyncing }) => {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const isAdmin = role === 'admin';
   
-  // Group items by category for easy findout
+  // Group and Sort by Category
   const groupedItems = useMemo(() => {
     const groups: { [key: string]: Equipment[] } = {};
     items.forEach((item: Equipment) => {
@@ -100,7 +99,7 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
       groups[cat].push(item);
     });
     
-    // Sort items within each group
+    // Sort items within each group alphabetically
     Object.keys(groups).forEach(key => {
       groups[key].sort((a, b) => a.name.localeCompare(b.name));
     });
@@ -126,7 +125,7 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
             {isSyncing && (
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-[10px] font-black text-blue-600 tracking-widest uppercase">Cloud Sync...</span>
+                <span className="text-[10px] font-black text-blue-600 tracking-widest uppercase">Cloud Processing...</span>
               </div>
             )}
           </div>
@@ -150,8 +149,8 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
         <div className="xl:col-span-2 space-y-12">
           {categories.length === 0 ? (
             <div className="py-32 bg-white rounded-[3rem] border border-slate-100 flex flex-col items-center justify-center text-center p-8">
-               <p className="text-lg font-black text-slate-900 uppercase tracking-widest">Database Clean</p>
-               <button onClick={onRefresh} className="mt-4 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Connect Matrix</button>
+               <p className="text-lg font-black text-slate-900 uppercase tracking-widest">Empty Matrix</p>
+               <button onClick={onRefresh} className="mt-4 px-6 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Pull From Cloud</button>
             </div>
           ) : categories.map(cat => (
             <div key={cat} className="space-y-6">
@@ -191,7 +190,7 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
   );
 };
 
-// --- Missing Components Added ---
+// --- Scanner Component ---
 const ScanPage: React.FC<{ onScan: (id: string) => void }> = ({ onScan }) => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] py-10 space-y-10 animate-in fade-in slide-in-from-bottom-10 duration-700">
     <div className="text-center space-y-3">
@@ -213,6 +212,7 @@ const ScanPage: React.FC<{ onScan: (id: string) => void }> = ({ onScan }) => (
   </div>
 );
 
+// --- QR Modal Component ---
 const QRCodeModal: React.FC<{ item: Equipment; onClose: () => void }> = ({ item, onClose }) => (
   <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/90 backdrop-blur-2xl p-4 animate-in fade-in duration-300">
     <div className="bg-white rounded-[3rem] shadow-2xl w-full max-w-sm overflow-hidden transform animate-in zoom-in slide-in-from-bottom-10 duration-500">
@@ -262,7 +262,12 @@ const AppContent: React.FC = () => {
   const navigate = useNavigate();
 
   const loadData = async (background = false) => {
-    if (syncLock) return; // FIX: Prevent stale data from overwriting local updates
+    // FIX: Lock background refreshes during update window to prevent "image reverting" bug
+    if (syncLock) {
+      console.log("Background sync locked during cloud processing window...");
+      return; 
+    }
+    
     if (!background) setIsLoading(true);
     setIsSyncing(true);
     const webhookUrl = storageService.getWebhookUrl();
@@ -300,16 +305,25 @@ const AppContent: React.FC = () => {
     else { showAlert('error', 'Asset Not Found', `ID ${id} is missing from local cache.`); }
   };
 
-  // FIX: Lock background refreshes for 5 seconds after a save to let Google Sheets catch up
+  // FIX: Lock background refreshes for 10 seconds after a save to let Google Sheets finish
   const lockSync = () => {
     setSyncLock(true);
-    setTimeout(() => setSyncLock(false), 5000); 
+    setTimeout(() => setSyncLock(false), 10000); 
   };
 
   const handleSaveEquipment = async (newItem: Equipment) => {
     const oldItems = [...items];
     // Optimistic UI update: change the local state immediately
-    setItems(editingItem ? items.map(i => i.id === newItem.id ? newItem : i) : [newItem, ...items]);
+    setItems(prevItems => {
+        const index = prevItems.findIndex(i => i.id === newItem.id);
+        if (index > -1) {
+            const updated = [...prevItems];
+            updated[index] = newItem;
+            return updated;
+        }
+        return [newItem, ...prevItems];
+    });
+    
     lockSync();
     try {
       if (editingItem) await storageService.updateItem(newItem);
@@ -361,7 +375,9 @@ const AppContent: React.FC = () => {
       <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-3xl border-b border-slate-100 px-6 py-4 mb-4 md:mb-10">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center gap-4 group">
-            <div className="bg-slate-900 p-3 rounded-[1.25rem] shadow-xl shadow-slate-200 transition-transform group-hover:rotate-6"><svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" /></svg></div>
+            <div className="w-12 h-12 bg-white p-1 rounded-xl shadow-xl shadow-slate-200 transition-transform group-hover:rotate-6 flex items-center justify-center overflow-hidden border border-slate-100">
+               <img src={LOGO_URL} alt="Logo" className="w-full h-full object-contain" />
+            </div>
             <div className="leading-none">
               <span className="text-xl font-black text-slate-900 tracking-tighter uppercase">EquipTrack</span>
               <div className="flex items-center gap-2 mt-0.5">

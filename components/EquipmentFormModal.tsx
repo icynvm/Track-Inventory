@@ -28,25 +28,32 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({ item, onClose, 
     }
   }, [item]);
 
-  // FIX: Added compression logic to ensure image fits in Google Sheet cells
+  /**
+   * FIX: High-res images are too big for Google Sheet cells.
+   * This compressor ensures they fit by forcing them into a small JPG.
+   */
   const compressImage = (base64: string): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.src = base64;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 400; // Small but clear enough for inventory
+        const MAX_WIDTH = 320; // Enough for a clear thumbnail, stays small
         const scaleSize = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
         canvas.height = img.height * scaleSize;
 
         const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        if (!ctx) { resolve(base64); return; }
+        
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        // Compress heavily (0.6 quality) to ensure it stays under GAS/Sheet limits
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+        // Force to JPEG at 0.5 quality to significantly reduce string length
+        // This keeps the base64 string usually under 20-30k chars
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
         resolve(compressedBase64);
       };
+      img.onerror = () => resolve(base64);
     });
   };
 
@@ -98,7 +105,7 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({ item, onClose, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
       <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden transform animate-in zoom-in duration-300">
         <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <div>
@@ -121,12 +128,13 @@ const EquipmentFormModal: React.FC<EquipmentFormModalProps> = ({ item, onClose, 
               {isCompressing ? (
                  <div className="flex flex-col items-center gap-2">
                     <div className="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Shrinking Media...</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Compressing Media...</p>
                  </div>
               ) : imageUrl ? (
                 <>
                   <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
                   <button 
+                    type="button"
                     onClick={removeImage}
                     className="absolute top-4 right-4 z-20 p-2 bg-red-600 text-white rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100"
                   >
