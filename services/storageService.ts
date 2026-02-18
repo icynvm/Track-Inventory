@@ -25,22 +25,20 @@ export const storageService = {
     } else {
       localStorage.setItem('equiptrack_webhook_override', url.trim());
     }
-    // Reload to apply changes across service
     window.location.reload();
   },
 
   /**
-   * Sending data to Google Apps Script.
-   * CRITICAL: Using 'text/plain' makes this a "Simple Request", 
-   * which bypasses the CORS preflight OPTIONS check that GAS doesn't support.
+   * Fast asynchronous webhook call.
    */
   async callWebhook(action: string, payload: any = {}) {
     const url = getWebhookUrl();
     if (!url) return false;
 
     try {
-      // no-cors mode allows us to send data even if the response headers are missing
-      await fetch(url, {
+      // Using mode: no-cors ensures the call is as fast as possible 
+      // because the browser doesn't wait for a full response stream or CORS preflight.
+      const response = await fetch(url, {
         method: 'POST',
         mode: 'no-cors', 
         headers: {
@@ -50,7 +48,7 @@ export const storageService = {
       });
       return true;
     } catch (error) {
-      console.error("Webhook POST Error (Check if GAS is set to 'Anyone'):", error);
+      console.warn("Background Sync Warning:", error);
       return false;
     }
   },
@@ -66,17 +64,13 @@ export const storageService = {
         redirect: 'follow'
       });
       
-      if (!res.ok) {
-        if (res.status === 403) console.error("Access Forbidden (403): Please re-deploy GAS with 'Who has access: Anyone'");
-        throw new Error(`HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       
       const data = await res.json();
       const cleaned = data.filter((item: any) => item.id && item.id !== 'id');
       localStorage.setItem('equiptrack_data', JSON.stringify(cleaned));
       return cleaned;
     } catch (e) {
-      console.error("Fetch Items Error (likely CORS/Permissions):", e);
       return JSON.parse(localStorage.getItem('equiptrack_data') || '[]');
     }
   },
@@ -99,27 +93,26 @@ export const storageService = {
       localStorage.setItem('equiptrack_logs', JSON.stringify(cleaned));
       return cleaned;
     } catch (e) {
-      console.error("Fetch Logs Error:", e);
       return JSON.parse(localStorage.getItem('equiptrack_logs') || '[]');
     }
   },
 
   async updateItem(updatedItem: Equipment): Promise<void> {
     const item = { ...updatedItem, lastActionDate: new Date().toISOString() };
-    await this.callWebhook('update_item', { item });
     this.localSync('update_item', { item });
+    await this.callWebhook('update_item', { item });
   },
 
   async addItem(item: Equipment): Promise<void> {
-    await this.callWebhook('add_item', { item });
     this.localSync('add_item', { item });
+    await this.callWebhook('add_item', { item });
   },
 
   async deleteItem(id: string): Promise<void> {
-    await this.callWebhook('delete_item', { id });
     const items = JSON.parse(localStorage.getItem('equiptrack_data') || '[]');
     const filtered = items.filter((i: any) => i.id !== id);
     localStorage.setItem('equiptrack_data', JSON.stringify(filtered));
+    await this.callWebhook('delete_item', { id });
   },
 
   async addLog(log: Omit<AuditLog, 'id' | 'timestamp'>): Promise<void> {
@@ -128,8 +121,8 @@ export const storageService = {
       id: Math.random().toString(36).substr(2, 9), 
       timestamp: new Date().toISOString() 
     };
-    await this.callWebhook('add_log', { log: newLog });
     this.localSync('add_log', { log: newLog });
+    await this.callWebhook('add_log', { log: newLog });
   },
 
   localSync(action: string, payload: any) {
@@ -137,7 +130,7 @@ export const storageService = {
       const items = JSON.parse(localStorage.getItem('equiptrack_data') || '[]');
       const index = items.findIndex((i: any) => i.id === payload.item.id);
       if (index > -1) items[index] = payload.item;
-      else items.push(payload.item);
+      else items.unshift(payload.item);
       localStorage.setItem('equiptrack_data', JSON.stringify(items));
     }
     if (action === 'add_log') {
@@ -145,9 +138,5 @@ export const storageService = {
       logs.unshift(payload.log);
       localStorage.setItem('equiptrack_logs', JSON.stringify(logs.slice(0, 100)));
     }
-  },
-
-  getItemById: (id: string, items: Equipment[]): Equipment | undefined => {
-    return items.find(item => item.id === id);
   }
 };

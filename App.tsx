@@ -162,7 +162,7 @@ const DashboardPage: React.FC<any> = ({ items, logs, onSelectItem, onAddEquipmen
               </div>
             )}
           </div>
-          <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tighter uppercase leading-none">Assets List</h1>
+          <h1 className="text-5xl md:text-7xl font-extrabold text-white tracking-tighter uppercase leading-none">ASSETS LIST</h1>
         </div>
         <div className="flex gap-3 w-full md:w-auto">
           <button onClick={onRefresh} className={`p-5 glass text-slate-400 hover:text-white rounded-2xl transition-all shadow-xl ${isSyncing ? 'animate-spin' : ''}`}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
@@ -341,8 +341,12 @@ const AppContent: React.FC = () => {
     setTimeout(() => setSyncLock(false), 10000); 
   };
 
+  // OPTIMIZED: Saving equipment is now optimistic
   const handleSaveEquipment = async (newItem: Equipment) => {
     const oldItems = [...items];
+    const isEditing = !!editingItem;
+    
+    // 1. Update UI Locally immediately
     setItems(prevItems => {
         const index = prevItems.findIndex(i => i.id === newItem.id);
         if (index > -1) {
@@ -352,48 +356,94 @@ const AppContent: React.FC = () => {
         }
         return [newItem, ...prevItems];
     });
+
+    // 2. Close Modal immediately
+    setIsAddingEquipment(false);
+    setEditingItem(null);
+    if (!isEditing) setViewingQRItem(newItem);
+    
+    // 3. Fire-and-forget background sync
+    setIsSyncing(true);
     lockSync();
-    try {
-      if (editingItem) await storageService.updateItem(newItem);
-      else await storageService.addItem(newItem);
-      setIsAddingEquipment(false);
-      setEditingItem(null);
-      if (!editingItem) setViewingQRItem(newItem);
-    } catch (e) {
-      setItems(oldItems);
-      showAlert('error', 'CLOUD_REJECT', 'Depot sync failed.');
-      throw e;
-    }
+    
+    storageService[isEditing ? 'updateItem' : 'addItem'](newItem)
+      .then(() => {
+        setIsSyncing(false);
+      })
+      .catch((e) => {
+        // Rollback only on hard failure
+        setItems(oldItems);
+        setIsSyncing(false);
+        showAlert('error', 'CLOUD_SYNC_FAILED', 'Changes saved locally but failed to sync to cloud.');
+      });
   };
 
+  // OPTIMIZED: Deletion is now optimistic
   const handleDeleteItem = (item: Equipment) => {
-    showAlert('confirm', 'WIPE ASSET', `Purge ${item.name} from depot?`, async () => {
+    showAlert('confirm', 'WIPE ASSET', `Purge ${item.name} from depot?`, () => {
       const oldItems = [...items];
+      
+      // 1. Update UI immediately
       setItems(items.filter(i => i.id !== item.id));
+      
+      // 2. Background Sync
+      setIsSyncing(true);
       lockSync();
-      try { await storageService.deleteItem(item.id); }
-      catch (e) { setItems(oldItems); showAlert('error', 'WIPE_FAILED', 'Cloud record exists.'); }
+      storageService.deleteItem(item.id)
+        .then(() => setIsSyncing(false))
+        .catch(e => {
+          setItems(oldItems);
+          setIsSyncing(false);
+          showAlert('error', 'WIPE_FAILED', 'Cloud record exists but could not be removed.');
+        });
     });
   };
 
+  // OPTIMIZED: Action handling (Checkout/Return) is now lightning fast
   const handleAction = async (updatedItem: Equipment, userName: string, projectName?: string, notes?: string) => {
     const isCheckOut = updatedItem.status === EquipmentStatus.IN_USE;
     const oldItems = [...items];
     const oldLogs = [...logs];
-    const tempLog: AuditLog = { id: 'temp-' + Date.now(), equipmentId: updatedItem.id, equipmentName: updatedItem.name, action: isCheckOut ? 'CHECK_OUT' : 'CHECK_IN', userName, projectName, timestamp: new Date().toISOString(), notes };
+    const tempLog: AuditLog = { 
+      id: 'temp-' + Date.now(), 
+      equipmentId: updatedItem.id, 
+      equipmentName: updatedItem.name, 
+      action: isCheckOut ? 'CHECK_OUT' : 'CHECK_IN', 
+      userName, 
+      projectName, 
+      timestamp: new Date().toISOString(), 
+      notes 
+    };
+
+    // 1. UPDATE UI IMMEDIATELY
     setItems(items.map(i => i.id === updatedItem.id ? updatedItem : i));
     setLogs([tempLog, ...logs]);
+    
+    // 2. CLOSE MODAL IMMEDIATELY
+    setSelectedItem(null);
+    
+    // 3. BACKGROUND SYNC (Parallel)
+    setIsSyncing(true);
     lockSync();
-    try {
-      await storageService.updateItem(updatedItem);
-      await storageService.addLog({ equipmentId: updatedItem.id, equipmentName: updatedItem.name, action: isCheckOut ? 'CHECK_OUT' : 'CHECK_IN', userName, projectName, notes });
-      setSelectedItem(null);
-    } catch (e) {
-      setItems(oldItems);
-      setLogs(oldLogs);
-      showAlert('error', 'DEPOT_SYNC_ERR', 'Status update rejected by cloud.');
-      throw e;
-    }
+
+    Promise.all([
+      storageService.updateItem(updatedItem),
+      storageService.addLog({ 
+        equipmentId: updatedItem.id, 
+        equipmentName: updatedItem.name, 
+        action: isCheckOut ? 'CHECK_OUT' : 'CHECK_IN', 
+        userName, 
+        projectName, 
+        notes 
+      })
+    ]).then(() => {
+      setIsSyncing(false);
+    }).catch(e => {
+      // Quietly log error or handle rollback if critical
+      console.error("Background sync error:", e);
+      setIsSyncing(false);
+      // Optional: showAlert('warning', 'SYNC_LATENCY', 'Data saved locally but cloud update is slow.');
+    });
   };
 
   if (!role) return <LoginPage onLogin={handleLogin} />;
